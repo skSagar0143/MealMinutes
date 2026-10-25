@@ -20,15 +20,13 @@ import static org.mockito.Mockito.*;
 
 class TenantContextFilterTests {
     @AfterEach
-    void clearContext() {
-        TenantContext.clear();
-    }
+    void clearContext() { TenantContext.clear(); }
 
     @Test
     void bindsTenantForRequestAndClearsItAfterSuccess() throws Exception {
         TenantResolverService resolver = mock(TenantResolverService.class);
         when(resolver.resolve("abc.example.com"))
-                .thenReturn(new TenantDescriptor("tenant-1", "abc", "tenant_abc"));
+                .thenReturn(new TenantDescriptor("tenant-1", "abc", "tenant_abc", "secret://abc"));
         TenantContextFilter filter = new TenantContextFilter(resolver);
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/menu");
         request.setServerName("abc.example.com");
@@ -64,7 +62,7 @@ class TenantContextFilterTests {
     void clearsContextWhenDownstreamThrows() throws Exception {
         TenantResolverService resolver = mock(TenantResolverService.class);
         when(resolver.resolve("abc.example.com"))
-                .thenReturn(new TenantDescriptor("tenant-1", "abc", "tenant_abc"));
+                .thenReturn(new TenantDescriptor("tenant-1", "abc", "tenant_abc", "secret://abc"));
         TenantContextFilter filter = new TenantContextFilter(resolver);
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/menu");
         request.setServerName("abc.example.com");
@@ -81,10 +79,8 @@ class TenantContextFilterTests {
         TenantContextFilter filter = new TenantContextFilter(resolver);
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        MockHttpServletRequest health = new MockHttpServletRequest("GET", "/actuator/health");
-        filter.doFilter(health, response, (req, res) -> { });
-        MockHttpServletRequest platform = new MockHttpServletRequest("GET", "/api/v1/platform/tenants");
-        filter.doFilter(platform, response, (req, res) -> { });
+        filter.doFilter(new MockHttpServletRequest("GET", "/actuator/health"), response, (req, res) -> { });
+        filter.doFilter(new MockHttpServletRequest("GET", "/api/v1/platform/tenants"), response, (req, res) -> { });
 
         verifyNoInteractions(resolver);
     }

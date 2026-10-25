@@ -3,8 +3,8 @@ package com.mealminutes.platform.tenant.domain;
 import java.util.Objects;
 
 /**
- * Request-local tenant identity. Never treat this context as proof that the
- * authenticated principal is authorized for the tenant.
+ * Request-local tenant identity. This context is routing metadata, not proof
+ * that the authenticated principal is authorized for the tenant.
  */
 public final class TenantContext {
     private static final ThreadLocal<TenantDescriptor> CURRENT = new ThreadLocal<>();
@@ -36,7 +36,8 @@ public final class TenantContext {
         CURRENT.remove();
     }
 
-    public record TenantDescriptor(String tenantId, String slug, String databaseName) {
+    public record TenantDescriptor(
+            String tenantId, String slug, String databaseName, String databaseSecretReference) {
         public TenantDescriptor {
             if (tenantId == null || tenantId.isBlank()) throw new IllegalArgumentException("tenantId is required");
             if (slug == null || slug.isBlank()) throw new IllegalArgumentException("slug is required");

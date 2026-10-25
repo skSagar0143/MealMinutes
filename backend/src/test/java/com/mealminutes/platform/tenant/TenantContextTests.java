@@ -9,13 +9,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class TenantContextTests {
     @AfterEach
-    void cleanContext() {
-        TenantContext.clear();
-    }
+    void cleanContext() { TenantContext.clear(); }
 
     @Test
     void bindsAndRemovesTenantWhenScopeCloses() {
-        var descriptor = new TenantContext.TenantDescriptor("tenant-1", "abc-food", "tenant_abc_food");
+        var descriptor = new TenantContext.TenantDescriptor("tenant-1", "abc-food", "tenant_abc_food", "secret://abc");
         try (TenantContext.Scope ignored = TenantContext.bind(descriptor)) {
             assertThat(TenantContext.requireCurrent()).isEqualTo(descriptor);
         }
@@ -26,18 +24,18 @@ class TenantContextTests {
     void rejectsMissingOrNestedContexts() {
         assertThatThrownBy(TenantContext::requireCurrent).isInstanceOf(IllegalStateException.class);
         try (TenantContext.Scope ignored = TenantContext.bind(
-                new TenantContext.TenantDescriptor("tenant-1", "abc-food", null))) {
+                new TenantContext.TenantDescriptor("tenant-1", "abc-food", null, null))) {
             assertThatThrownBy(() -> TenantContext.bind(
-                    new TenantContext.TenantDescriptor("tenant-2", "xyz-food", null)))
+                    new TenantContext.TenantDescriptor("tenant-2", "xyz-food", null, null)))
                     .isInstanceOf(IllegalStateException.class);
         }
     }
 
     @Test
     void descriptorRequiresIdentityAndSlug() {
-        assertThatThrownBy(() -> new TenantContext.TenantDescriptor("", "abc", null))
+        assertThatThrownBy(() -> new TenantContext.TenantDescriptor("", "abc", null, null))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> new TenantContext.TenantDescriptor("tenant", " ", null))
+        assertThatThrownBy(() -> new TenantContext.TenantDescriptor("tenant", " ", null, null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }

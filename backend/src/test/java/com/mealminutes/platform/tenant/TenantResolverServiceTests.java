@@ -21,8 +21,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class TenantResolverServiceTests {
-    @Mock
-    private TenantDomainRepository domainRepository;
+    @Mock private TenantDomainRepository domainRepository;
 
     @Test
     void resolvesOnlyVerifiedDomainForActiveProvisionedTenant() {
@@ -36,6 +35,7 @@ class TenantResolverServiceTests {
         assertThat(resolved.tenantId()).isEqualTo(domain.getTenant().getTenantId());
         assertThat(resolved.slug()).isEqualTo("abc-food");
         assertThat(resolved.databaseName()).isEqualTo("tenant_abc_food");
+        assertThat(resolved.databaseSecretReference()).isEqualTo("secret://tenants/abc-food/db");
     }
 
     @Test
@@ -67,8 +67,7 @@ class TenantResolverServiceTests {
 
     @Test
     void rejectsUnprovisionedTenantEvenWhenDomainIsVerified() {
-        TenantRegistryEntry tenant = new TenantRegistryEntry("abc-food");
-        TenantDomain domain = verifiedDomain(tenant);
+        TenantDomain domain = verifiedDomain(new TenantRegistryEntry("abc-food"));
         when(domainRepository.findByHostnameAndVerificationStatus(
                 "abcfood.example.com", DomainVerificationStatus.VERIFIED)).thenReturn(Optional.of(domain));
 

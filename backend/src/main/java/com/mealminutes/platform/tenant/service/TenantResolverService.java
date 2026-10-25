@@ -36,10 +36,13 @@ public class TenantResolverService {
         if (tenant.getLifecycleStatus() != TenantLifecycleStatus.ACTIVE
                 || tenant.getProvisioningStatus() != ProvisioningStatus.SUCCEEDED
                 || tenant.getTenantDatabaseName() == null
-                || tenant.getTenantDatabaseName().isBlank()) {
+                || tenant.getTenantDatabaseName().isBlank()
+                || tenant.getDatabaseSecretReference() == null
+                || tenant.getDatabaseSecretReference().isBlank()) {
             throw new TenantResolutionException("Tenant is unavailable");
         }
         return new TenantContext.TenantDescriptor(
-                tenant.getTenantId(), tenant.getSlug(), tenant.getTenantDatabaseName());
+                tenant.getTenantId(), tenant.getSlug(), tenant.getTenantDatabaseName(),
+                tenant.getDatabaseSecretReference());
     }
 }
