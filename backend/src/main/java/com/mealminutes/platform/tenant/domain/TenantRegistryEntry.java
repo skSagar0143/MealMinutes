@@ -11,10 +11,13 @@ import jakarta.persistence.Table;
 
 import java.time.Instant;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 @Entity
 @Table(name = "platform_tenant_registry")
 public class TenantRegistryEntry {
+    private static final Pattern SLUG = Pattern.compile("[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?");
+    private static final Pattern DATABASE_NAME = Pattern.compile("[a-z][a-z0-9_]{0,63}");
 
     @Id
     @Column(name = "tenant_id", nullable = false, updatable = false, length = 36)
@@ -46,13 +49,63 @@ public class TenantRegistryEntry {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    protected TenantRegistryEntry() {
-    }
+    protected TenantRegistryEntry() { }
 
     public TenantRegistryEntry(String slug) {
+        if (slug == null || !SLUG.matcher(slug).matches()) {
+            throw new IllegalArgumentException("Tenant slug must be lowercase alphanumeric with internal hyphens");
+        }
         this.slug = slug;
         this.lifecycleStatus = TenantLifecycleStatus.REGISTERED;
         this.provisioningStatus = ProvisioningStatus.NOT_STARTED;
+    }
+
+    public void transitionTo(TenantLifecycleStatus target) {
+        TenantLifecyclePolicy.requireAllowed(lifecycleStatus, target);
+        if (target == TenantLifecycleStatus.ACTIVE
+                && (provisioningStatus != ProvisioningStatus.SUCCEEDED
+                || tenantDatabaseName == null || databaseSecretReference == null)) {
+            throw new IllegalStateException("Tenant cannot become active before provisioning succeeds");
+        }
+        lifecycleStatus = target;
+    }
+
+    public void beginProvisioning() {
+        if (lifecycleStatus != TenantLifecycleStatus.APPROVED
+                && lifecycleStatus != TenantLifecycleStatus.FAILED) {
+            throw new IllegalStateException("Only approved or failed tenants can be provisioned");
+        }
+        lifecycleStatus = TenantLifecycleStatus.PROVISIONING;
+        provisioningStatus = ProvisioningStatus.IN_PROGRESS;
+    }
+
+    public void completeProvisioning(String databaseName, String secretReference, int migratedSchemaVersion) {
+        if (lifecycleStatus != TenantLifecycleStatus.PROVISIONING
+                || provisioningStatus != ProvisioningStatus.IN_PROGRESS) {
+            throw new IllegalStateException("Provisioning has not been started");
+        }
+        if (databaseName == null || !DATABASE_NAME.matcher(databaseName).matches()) {
+            throw new IllegalArgumentException("Invalid tenant database name");
+        }
+        if (secretReference == null || secretReference.isBlank() || secretReference.length() > 255) {
+            throw new IllegalArgumentException("A secret-manager reference is required; never store a password here");
+        }
+        if (migratedSchemaVersion < 1) {
+            throw new IllegalArgumentException("Schema version must be positive");
+        }
+        tenantDatabaseName = databaseName;
+        databaseSecretReference = secretReference;
+        schemaVersion = migratedSchemaVersion;
+        provisioningStatus = ProvisioningStatus.SUCCEEDED;
+    }
+
+    public void failProvisioning() {
+        if (lifecycleStatus != TenantLifecycleStatus.PROVISIONING
+                || provisioningStatus != ProvisioningStatus.IN_PROGRESS) {
+            throw new IllegalStateException("Provisioning has not been started");
+        }
+        provisioningStatus = ProvisioningStatus.FAILED;
+        lifecycleStatus = TenantLifecycleStatus.FAILED;
     }
 
     @PrePersist
@@ -66,9 +119,7 @@ public class TenantRegistryEntry {
     }
 
     @PreUpdate
-    void beforeUpdate() {
-        updatedAt = Instant.now();
-    }
+    void beforeUpdate() { updatedAt = Instant.now(); }
 
     public String getTenantId() { return tenantId; }
     public String getSlug() { return slug; }
