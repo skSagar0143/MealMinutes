@@ -2,7 +2,7 @@
 
 ## Current baseline
 
-The backend contains a Spring Boot context smoke test and JaCoCo Maven plugin configuration. These are scaffolding only; no test execution result is claimed by this document.
+The backend contains a Spring Boot context smoke test, a tenant-registry persistence integration test, and JaCoCo Maven plugin configuration. The integration test requires MySQL and Flyway; no test execution result is claimed by this document.
 
 ## Commands
 
