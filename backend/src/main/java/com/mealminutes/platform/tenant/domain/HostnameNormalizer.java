@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
  */
 public final class HostnameNormalizer {
     private static final Pattern LABEL = Pattern.compile("[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?");
+
     private HostnameNormalizer() { }
 
     public static String normalize(String input) {
@@ -18,7 +19,7 @@ public final class HostnameNormalizer {
         }
         String candidate = input.trim();
         if (candidate.isEmpty() || candidate.length() > 260
-                || candidate.contains("/") || candidate.contains("\\\\")
+                || candidate.contains("/") || candidate.contains("\\")
                 || candidate.contains("@") || candidate.contains(":")
                 || candidate.contains("*") || candidate.contains("?")
                 || candidate.contains("#")) {
