@@ -25,7 +25,7 @@ Updated: 2026-10-26. This is a living tracker; statuses must reflect verified re
 - [x] Bind a request-scoped tenant descriptor and clear it on success and exception paths.
 - [x] Add unit tests for malformed hosts, tenant lifecycle transitions, resolver rejection, and context cleanup.
 - [ ] Implement domain ownership proof/verification workflow.
-- [ ] Implement bounded tenant datasource/pool lifecycle and actual database routing.
+- [x] Implement an isolated bounded LRU tenant datasource pool registry with validated database names and secret-reference credentials.\n- [ ] Wire tenant pools into a tenant-aware EntityManagerFactory/router and prove isolation with integration tests.
 - [ ] Implement tenant membership authorization independent of hostname.
 - [ ] Implement RS256 access tokens, refresh rotation/revocation, password hashing, login throttling, and permissions.
 - [ ] Add real cross-tenant, forged-host/header, and concurrent datasource-isolation integration tests.

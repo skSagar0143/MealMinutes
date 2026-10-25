@@ -64,7 +64,7 @@ public final class TenantDataSourcePool implements AutoCloseable {
         TenantDatabaseCredentialsProvider.DatabaseCredentials credentials =
                 credentialsProvider.resolve(tenant.databaseSecretReference());
         HikariDataSource dataSource = dataSourceFactory.create(
-                jdbcUrl, "tenant-" + tenant.tenantId().replace("-", "").substring(0, 8),
+                jdbcUrl, "tenant-" + poolNameSuffix(tenant.tenantId()),
                 credentials, properties);
         pools.put(tenant.tenantId(), new PoolEntry(
                 tenant.databaseName(), tenant.databaseSecretReference(), dataSource));
@@ -86,6 +86,14 @@ public final class TenantDataSourcePool implements AutoCloseable {
         closed = true;
         pools.values().forEach(entry -> entry.dataSource.close());
         pools.clear();
+    }
+
+    private static String poolNameSuffix(String tenantId) {
+        String normalized = tenantId.replaceAll("[^A-Za-z0-9]", "");
+        if (normalized.isEmpty()) {
+            throw new IllegalArgumentException("Tenant ID cannot produce a pool name");
+        }
+        return normalized.substring(0, Math.min(8, normalized.length()));
     }
 
     private static HikariDataSource createHikariDataSource(

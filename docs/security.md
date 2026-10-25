@@ -14,7 +14,7 @@
 
 - Authentication, RS256 JWT validation, refresh-token rotation/revocation, password hashing, MFA, account throttling, and role/permission authorization are not implemented yet.
 - Hostname resolution is **not authorization**. A hostname or tenant context must never be used as proof that a user belongs to that tenant. Membership and role checks must be implemented before exposing business APIs.
-- There is not yet a tenant-aware datasource router or bounded pool manager. The current datasource is the platform database only; do not query tenant business data through it.
+- A bounded, access-ordered tenant datasource pool registry now exists with validated database names, secret-reference credential resolution, eviction, and close semantics. It is not yet wired into a tenant-aware EntityManagerFactory/router; the current JPA datasource is still the platform database only. Do not query tenant business data through it.
 - Domain ownership verification is not implemented. The `markVerified` domain model method is an internal state transition only and must never be exposed through an unauthenticated public endpoint.
 - No production secret manager, TLS deployment, rate limiter, security scanner, or external penetration test is configured.
 
