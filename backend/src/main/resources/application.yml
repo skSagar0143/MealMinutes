@@ -25,6 +25,15 @@ spring:
     enabled: true
     locations: classpath:db/migration
 
+mealminutes:
+  tenant-datasource:
+    jdbc-url-template: "${TENANT_JDBC_URL_TEMPLATE:jdbc:mysql://localhost:3306/{database}?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC}"
+    max-pool-count: ${TENANT_DB_MAX_POOLS:20}
+    max-pool-size-per-tenant: ${TENANT_DB_POOL_SIZE:5}
+    min-idle-per-tenant: ${TENANT_DB_MIN_IDLE:0}
+    connection-timeout-ms: ${TENANT_DB_CONNECTION_TIMEOUT_MS:3000}
+    idle-timeout-ms: ${TENANT_DB_IDLE_TIMEOUT_MS:60000}
+
 server:
   port: ${SERVER_PORT:8080}
   shutdown: graceful
