@@ -55,6 +55,7 @@ public class TenantRegistryEntry {
         if (slug == null || !SLUG.matcher(slug).matches()) {
             throw new IllegalArgumentException("Tenant slug must be lowercase alphanumeric with internal hyphens");
         }
+        this.tenantId = UUID.randomUUID().toString();
         this.slug = slug;
         this.lifecycleStatus = TenantLifecycleStatus.REGISTERED;
         this.provisioningStatus = ProvisioningStatus.NOT_STARTED;
