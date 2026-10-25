@@ -27,3 +27,8 @@
 5. Verify deployment TLS, trusted reverse-proxy configuration, secrets, backups, monitoring, and incident response before launch.
 
 Never commit real credentials, private keys, provider secrets, or production database passwords.
+
+
+## Current fail-closed baseline
+
+Spring Security is now present. The current filter chain is stateless, explicitly permits only health and limited info endpoints, and denies all other requests. This is intentionally not a usable authentication implementation; do not expose the service as a working API until RS256 authentication, refresh-token rotation/revocation, and authorization are implemented and tested. Do not replace this with `permitAll()` as a workaround.

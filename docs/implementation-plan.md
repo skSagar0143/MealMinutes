@@ -7,9 +7,9 @@ Updated: 2026-10-26. This is a living tracker; statuses must reflect verified re
 - [x] Initialize repository documentation and Java 21 / Spring Boot build.
 - [x] Add externalized configuration and Actuator health probes.
 - [x] Add application context smoke test and JaCoCo HTML/XML report wiring with instruction/branch checks.
-- [ ] Get the full backend CI build green; previous run failed because Boot 4 Flyway auto-configuration starter was missing, now corrected but awaiting a new run.
+- [x] Get the backend CI build green with Flyway migration, 32 tests, JaCoCo report upload, and configured coverage gates.
 - [x] Add Docker Compose configuration for local MySQL and Redis.
-- [ ] Verify clean local startup and Maven tests on Java 21.
+- [ ] Verify clean local startup and Maven tests on Java 21 outside GitHub Actions.
 
 ## Phase 2 — Data and module boundaries
 
@@ -27,6 +27,7 @@ Updated: 2026-10-26. This is a living tracker; statuses must reflect verified re
 - [ ] Implement domain ownership proof/verification workflow.
 - [x] Implement an isolated bounded LRU tenant datasource pool registry with validated database names and secret-reference credentials.\n- [ ] Wire tenant pools into a tenant-aware EntityManagerFactory/router and prove isolation with integration tests.
 - [ ] Implement tenant membership authorization independent of hostname.
+- [x] Add fail-closed stateless Spring Security baseline; only health/info are allow-listed while API authentication is pending.
 - [ ] Implement RS256 access tokens, refresh rotation/revocation, password hashing, login throttling, and permissions.
 - [ ] Add real cross-tenant, forged-host/header, and concurrent datasource-isolation integration tests.
 
