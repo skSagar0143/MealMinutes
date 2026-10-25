@@ -13,4 +13,7 @@ public interface TenantDomainRepository extends JpaRepository<TenantDomain, Stri
             String hostname, DomainVerificationStatus verificationStatus);
 
     boolean existsByHostname(String hostname);
+
+    Optional<TenantDomain> findFirstByTenant_TenantIdAndVerificationStatus(
+            String tenantId, DomainVerificationStatus verificationStatus);
 }
