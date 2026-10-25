@@ -8,11 +8,11 @@ Updated: 2026-10-26. This is a living tracker; statuses must reflect verified re
 - [x] Add safe default configuration and actuator health probes.
 - [x] Add an application context smoke test and JaCoCo report wiring.
 - [ ] Run Maven build and tests in a Java 21 environment.
-- [ ] Add Docker Compose and verify clean local startup.
+- [x] Add Docker Compose configuration for local MySQL and Redis.\n- [ ] Verify clean local startup and Maven tests in a Java 21 environment.
 
 ## Phase 2 — Data and module boundaries
 
-- [ ] Add MySQL and Flyway platform migrations.
+- [x] Add initial MySQL and Flyway platform registry migrations.
 - [ ] Define tenant registry and lifecycle state machine.
 - [ ] Document platform-vs-tenant data ownership.
 - [ ] Add tenant database provisioning/migration orchestration with safe retries.
