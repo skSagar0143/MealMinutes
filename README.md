@@ -16,9 +16,9 @@ Spring Boot 4.1.2 is the stable release selected from the official docs checked 
 
 ## Actual implementation status
 
-The repository was empty at the start. The first foundation milestone currently contains a Spring Boot entry point, basic externalized configuration, an application-context smoke test, JaCoCo report wiring, local MySQL/Redis Compose services, a Java 21 backend CI workflow, and architecture/setup/testing documentation.
+The repository was empty at the start. The initial foundation now contains a Spring Boot entry point, externalized configuration, an application-context smoke test, JaCoCo wiring, local MySQL/Redis Compose services, a Java 21 backend CI workflow, and architecture/setup/testing documentation. The first persistence increment adds a Flyway-managed platform tenant registry/domain schema, JPA models and repositories, and a MySQL-backed repository integration test.
 
-**The business platform is not yet implemented or production-ready.** Tenant provisioning/routing, authentication, business APIs, database migrations, Redis integration, Kafka workflows, web UI, mobile app, and end-to-end tests remain pending. Track progress in [the implementation plan](docs/implementation-plan.md); a feature is complete only after its code and relevant test evidence exist.
+**The business platform is not yet implemented or production-ready.** Tenant provisioning/routing, authentication, business APIs, tenant-database migrations/provisioning, Redis integration, Kafka workflows, web UI, mobile app, and broad end-to-end/security tests remain pending. The current migration and integration test have not yet been executed in this environment. Track progress in [the implementation plan](docs/implementation-plan.md); a feature is complete only after its code and relevant test evidence exist.
 
 ## Local development
 
