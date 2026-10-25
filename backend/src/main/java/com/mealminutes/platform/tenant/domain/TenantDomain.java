@@ -17,7 +17,6 @@ import java.util.UUID;
 @Entity
 @Table(name = "platform_tenant_domain")
 public class TenantDomain {
-
     @Id
     @Column(name = "domain_id", nullable = false, updatable = false, length = 36)
     private String domainId;
@@ -39,13 +38,30 @@ public class TenantDomain {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    protected TenantDomain() {
-    }
+    protected TenantDomain() { }
 
     public TenantDomain(TenantRegistryEntry tenant, String hostname) {
+        if (tenant == null) {
+            throw new IllegalArgumentException("Tenant is required");
+        }
         this.tenant = tenant;
-        this.hostname = hostname;
+        this.hostname = HostnameNormalizer.normalize(hostname);
         this.verificationStatus = DomainVerificationStatus.PENDING;
+    }
+
+    public void markVerified() {
+        if (verificationStatus == DomainVerificationStatus.REVOKED) {
+            throw new IllegalStateException("A revoked domain cannot be verified again; register it through the verification workflow");
+        }
+        verificationStatus = DomainVerificationStatus.VERIFIED;
+    }
+
+    public void revoke() {
+        verificationStatus = DomainVerificationStatus.REVOKED;
+    }
+
+    public void markPrimary() {
+        primary = true;
     }
 
     @PrePersist
