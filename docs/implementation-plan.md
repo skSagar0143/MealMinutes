@@ -5,25 +5,30 @@ Updated: 2026-10-26. This is a living tracker; statuses must reflect verified re
 ## Phase 1 — Foundation
 
 - [x] Initialize repository documentation and Java 21 / Spring Boot build.
-- [x] Add safe default configuration and actuator health probes.
-- [x] Add an application context smoke test and JaCoCo report wiring.
-- [ ] Run Maven build and tests in a Java 21 environment.
-- [x] Add Docker Compose configuration for local MySQL and Redis.\n- [ ] Verify clean local startup and Maven tests in a Java 21 environment.
+- [x] Add externalized configuration and Actuator health probes.
+- [x] Add application context smoke test and JaCoCo HTML/XML report wiring with instruction/branch checks.
+- [ ] Get the full backend CI build green; previous run failed because Boot 4 Flyway auto-configuration starter was missing, now corrected but awaiting a new run.
+- [x] Add Docker Compose configuration for local MySQL and Redis.
+- [ ] Verify clean local startup and Maven tests on Java 21.
 
 ## Phase 2 — Data and module boundaries
 
-- [x] Add initial MySQL and Flyway platform registry migrations.
-- [ ] Define tenant registry and lifecycle state machine.
-- [ ] Document platform-vs-tenant data ownership.
-- [ ] Add tenant database provisioning/migration orchestration with safe retries.
+- [x] Add initial MySQL/Flyway platform tenant registry and domain migration.
+- [x] Add tenant registry/domain JPA models and repositories.
+- [x] Add explicit tenant lifecycle transition policy and provisioning metadata invariants.
+- [x] Document platform-vs-tenant data ownership.
+- [ ] Implement restricted tenant database provisioning, per-tenant Flyway migration orchestration, safe retries and recovery.
 
 ## Phase 3 — Tenant isolation and security (release-blocking)
 
-- [ ] Trusted hostname resolution and request-scoped tenant context cleanup.
-- [ ] Bounded tenant datasource/pool lifecycle.
-- [ ] Tenant membership authorization independent of hostname.
-- [ ] RS256 access tokens, refresh rotation/revocation, password hashing and throttling.
-- [ ] Cross-tenant, forged-header, concurrency and context-leak tests.
+- [x] Normalize hostnames and resolve exact verified registry mappings for active/provisioned tenants.
+- [x] Bind a request-scoped tenant descriptor and clear it on success and exception paths.
+- [x] Add unit tests for malformed hosts, tenant lifecycle transitions, resolver rejection, and context cleanup.
+- [ ] Implement domain ownership proof/verification workflow.
+- [ ] Implement bounded tenant datasource/pool lifecycle and actual database routing.
+- [ ] Implement tenant membership authorization independent of hostname.
+- [ ] Implement RS256 access tokens, refresh rotation/revocation, password hashing, login throttling, and permissions.
+- [ ] Add real cross-tenant, forged-host/header, and concurrent datasource-isolation integration tests.
 
 ## Phase 4 — Core business workflows
 
@@ -36,8 +41,8 @@ Updated: 2026-10-26. This is a living tracker; statuses must reflect verified re
 ## Phase 5 — Redis and Kafka
 
 - [ ] Tenant-aware cache keys, TTLs, invalidation and outage behavior.
-- [ ] Versioned events, outbox, consumer idempotency, retry and dead-letter recovery.
-- [ ] Integration tests using real MySQL/Redis/Kafka containers where feasible.
+- [ ] Versioned events, transactional outbox, consumer idempotency, retry and dead-letter recovery.
+- [ ] Integration tests using real MySQL/Redis/Kafka containers.
 
 ## Phase 6 — Web and mobile
 
@@ -47,11 +52,12 @@ Updated: 2026-10-26. This is a living tracker; statuses must reflect verified re
 
 ## Phase 7 — Delivery quality and operations
 
-- [ ] CI: backend tests, JaCoCo, static/dependency checks, frontend lint/typecheck/tests/build.
+- [ ] CI: backend tests, JaCoCo thresholds, static/dependency checks, frontend lint/typecheck/tests/build.
 - [ ] Dockerfiles, local Compose health checks and resource limits.
-- [ ] Runbooks for deployment, TLS/DNS, secrets, backup/restore, monitoring and rollback.
-- [ ] Load/security testing and external production review.
+- [x] Add initial security, database ownership, API surface, and testing documentation.
+- [ ] Add deployment, TLS/DNS, secrets, backup/restore, monitoring, rollback and incident-response runbooks.
+- [ ] Run load/security testing and external production review.
 
 ## Release gates
 
-A gate is PASS only when code exists and evidence (commands, output, test results, or deployment verification) is recorded. Otherwise it remains FAIL or BLOCKED. A successful compile alone is not production readiness.
+A gate is PASS only when code exists and evidence (commands, output, test results, or deployment verification) is recorded. Otherwise it remains FAIL or BLOCKED. A successful compile alone is not production readiness. The application is not currently production-ready.
