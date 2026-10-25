@@ -11,6 +11,7 @@ import com.mealminutes.platform.tenant.service.TenantProvisioningService;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -22,8 +23,11 @@ class TenantProvisioningServiceTests {
     void provisionsOnlyAfterVerifiedDomainAndPersistsActiveState() {
         TenantRegistryRepository tenants = mock(TenantRegistryRepository.class);
         TenantDomainRepository domains = mock(TenantDomainRepository.class);
-        TenantDatabaseProvisioner provisioner = slug ->
-                new TenantDatabaseProvisioner.ProvisionedDatabase("tenant_abc_food", "secret://abc", 1);
+        AtomicReference<String> provisionedSlug = new AtomicReference<>();
+        TenantDatabaseProvisioner provisioner = slug -> {
+            provisionedSlug.set(slug);
+            return new TenantDatabaseProvisioner.ProvisionedDatabase("tenant_abc_food", "secret://abc", 1);
+        };
         TenantRegistryEntry tenant = approvedTenant();
         when(tenants.findById("tenant-id")).thenReturn(Optional.of(tenant));
         when(domains.findFirstByTenant_TenantIdAndVerificationStatus(
@@ -40,7 +44,7 @@ class TenantProvisioningServiceTests {
         assertThat(result.getLifecycleStatus()).isEqualTo(TenantLifecycleStatus.ACTIVE);
         assertThat(result.getTenantDatabaseName()).isEqualTo("tenant_abc_food");
         assertThat(result.getDatabaseSecretReference()).isEqualTo("secret://abc");
-        verify(provisioner).provision("abc-food");
+        assertThat(provisionedSlug.get()).isEqualTo("abc-food");
         verify(tenants, times(2)).saveAndFlush(any(TenantRegistryEntry.class));
     }
 
