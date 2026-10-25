@@ -13,6 +13,21 @@ permissions:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: mealminutes_platform
+          MYSQL_USER: mealminutes_app
+          MYSQL_PASSWORD: local_dev_only_change_me
+          MYSQL_ROOT_PASSWORD: local_root_only_change_me
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -plocal_root_only_change_me --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
