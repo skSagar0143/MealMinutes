@@ -16,9 +16,9 @@ Spring Boot 4.1.2 is the stable release selected from the official docs checked 
 
 ## Actual implementation status
 
-The repository was empty at the start. The initial foundation now contains a Spring Boot entry point, externalized configuration, an application-context smoke test, JaCoCo wiring, local MySQL/Redis Compose services, a Java 21 backend CI workflow, and architecture/setup/testing documentation. The first persistence increment adds a Flyway-managed platform tenant registry/domain schema, JPA models and repositories, and a MySQL-backed repository integration test.
+The repository was empty at the start. The initial foundation now contains a Spring Boot entry point, externalized configuration, an application-context smoke test, JaCoCo wiring, local MySQL/Redis Compose services, a Java 21 backend CI workflow, and architecture/setup/testing documentation. The tenant foundation now also includes strict hostname normalization, exact verified-domain lookup, active/provisioned tenant checks, request-scoped context cleanup, an explicit lifecycle/provisioning state machine, focused unit tests, and initial security/database/API/testing documentation. Flyway auto-configuration was corrected to use the Spring Boot 4 starter after CI exposed that the earlier dependency set did not execute migrations.
 
-**The business platform is not yet implemented or production-ready.** Tenant provisioning/routing, authentication, business APIs, tenant-database migrations/provisioning, Redis integration, Kafka workflows, web UI, mobile app, and broad end-to-end/security tests remain pending. The current migration and integration test have not yet been executed in this environment. Track progress in [the implementation plan](docs/implementation-plan.md); a feature is complete only after its code and relevant test evidence exist.
+**The business platform is not yet implemented or production-ready.** Actual tenant database provisioning/routing, authentication and authorization, business APIs, Redis integration, Kafka workflows, web UI, mobile app, and broad end-to-end/security tests remain pending. CI has exposed a Flyway wiring failure; the missing Spring Boot 4 Flyway starter has been added, and the subsequent run must be checked before the build can be considered green. Track progress in [the implementation plan](docs/implementation-plan.md); a feature is complete only after its code and relevant test evidence exist.
 
 ## Local development
 
@@ -39,7 +39,7 @@ These commands describe the intended local workflow; they are not claims that a 
 - [Implementation plan and release gates](docs/implementation-plan.md)
 - [Development setup](docs/development-setup.md)
 - [Tenant isolation requirements](docs/tenant-isolation.md)
-- [Testing strategy](docs/testing.md)
+- [Testing strategy and JaCoCo](docs/testing.md)\n- [Security design and gaps](docs/security.md)\n- [Database ownership](docs/database-design.md)\n- [API guide](docs/api-guide.md)
 - [ADR 0001: modular monolith](docs/architecture-decisions/0001-modular-monolith.md)
 - [ADR 0002: database-per-tenant](docs/architecture-decisions/0002-database-per-tenant.md)
 
