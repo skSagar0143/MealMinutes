@@ -81,7 +81,7 @@ The dispatcher records attempts and bounded error messages. Failures use exponen
 - [x] Send failures schedule bounded exponential retry and eventually enter database dead-letter state.
 - [x] Inbox receiver validates required metadata, positive schema version, active tenant and V10 schema readiness.
 - [x] Inbox receiver uses a tenant-local primary key and `INSERT IGNORE` to tolerate duplicate delivery.
-- [ ] Add an explicit supported-schema compatibility policy and real-broker tests proving invalid events reach the dead-letter topic after bounded retries.
+- [x] Reject event envelopes newer than the configured supported schema version (default 1).\n- [ ] Add real-broker tests proving invalid events reach the dead-letter topic after bounded retries.
 - [ ] Implement inbox business processing with durable attempts, idempotent side effects and processed-event ledger.
 - [ ] Consumer crash/rebalance/replay scenarios are tested against a real Kafka broker.
 - [ ] Dead-letter re-drive is audited and does not repeat irreversible side effects.

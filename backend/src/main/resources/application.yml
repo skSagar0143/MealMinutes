@@ -97,6 +97,7 @@ mealminutes:
     retry-interval-ms: ${MEALMINUTES_CONSUMER_RETRY_INTERVAL_MS:1000}
     retry-attempts: ${MEALMINUTES_CONSUMER_RETRY_ATTEMPTS:3}
     dead-letter-topic-suffix: ${MEALMINUTES_CONSUMER_DLT_SUFFIX:.DLT}
+    max-supported-event-schema-version: ${MEALMINUTES_CONSUMER_MAX_EVENT_SCHEMA_VERSION:1}
 
 server:
   port: ${SERVER_PORT:8080}

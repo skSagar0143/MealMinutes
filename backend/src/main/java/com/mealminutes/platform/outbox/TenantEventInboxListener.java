@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class TenantEventInboxListener {
     private static final Logger log = LoggerFactory.getLogger(TenantEventInboxListener.class);
     private static final int REQUIRED_INBOX_SCHEMA_VERSION = 10;
+    private final int maxSupportedEventSchemaVersion;
 
     private final TenantRegistryRepository tenants;
     private final JdbcTemplate tenantJdbc;
@@ -39,7 +40,12 @@ public class TenantEventInboxListener {
 
     public TenantEventInboxListener(TenantRegistryRepository tenants,
                                     @Qualifier("tenantBusinessJdbcTemplate") JdbcTemplate tenantJdbc,
-                                    @Qualifier("tenantTransactionManager") PlatformTransactionManager transactionManager) {
+                                    @Qualifier("tenantTransactionManager") PlatformTransactionManager transactionManager,
+                                    @Value("${mealminutes.consumer.max-supported-event-schema-version:1}") int maxSupportedEventSchemaVersion) {
+        if (maxSupportedEventSchemaVersion < 1) {
+            throw new IllegalArgumentException("maximum supported event schema version must be positive");
+        }
+        this.maxSupportedEventSchemaVersion = maxSupportedEventSchemaVersion;
         this.tenants = tenants;
         this.tenantJdbc = tenantJdbc;
         this.tenantTransaction = new TransactionTemplate(transactionManager);
@@ -51,6 +57,9 @@ public class TenantEventInboxListener {
     public void receive(ConsumerRecord<String, String> record) {
         if (record == null) throw new IllegalArgumentException("Kafka record is required");
         EventEnvelope event = EventEnvelope.from(record);
+        if (event.schemaVersion() > maxSupportedEventSchemaVersion) {
+            throw new IllegalArgumentException("Unsupported event schema version: " + event.schemaVersion());
+        }
         TenantRegistryEntry tenant = tenants.findById(event.tenantId())
                 .orElseThrow(() -> new IllegalStateException("Event references an unknown tenant"));
         if (tenant.getLifecycleStatus() != TenantLifecycleStatus.ACTIVE
