@@ -7,7 +7,7 @@ MealMinutes is a multi-tenant restaurant ordering and operations platform. **Zes
 - **Backend:** Java 21, Maven, Spring Boot 4.1.2, modular monolith.
 - **Data:** MySQL and Flyway, with a platform control-plane database and a separate business database for each restaurant tenant.
 - **Security:** Spring Security, optional RS256 access tokens, hashed refresh sessions with rotation/revocation, tenant membership authorization and audit records.
-- **Messaging:** Kafka transactional outbox dispatcher with event metadata, bounded polling, retries and database dead-letter state; consumer-side idempotency/re-drive is not complete.
+- **Messaging:** Kafka transactional outbox dispatcher with event metadata, bounded polling, retries and database dead-letter state; a feature-flagged tenant-scoped inbox receiver durably records events idempotently, while business processing and dead-letter re-drive remain pending.
 - **Local infrastructure:** Docker Compose for MySQL, Redis and Kafka.
 - **Web:** React + TypeScript.
 - **Mobile:** React Native + Expo + TypeScript.
@@ -26,6 +26,7 @@ MealMinutes is a multi-tenant restaurant ordering and operations platform. **Zes
 - Razorpay payment-intent creation, raw-body webhook signature verification, webhook event deduplication, payment/order state changes and transactional outbox writes.
 - React landing page/storefront and React Native/Expo menu-browsing foundation.
 - Tenant-aware Redis storefront caching with tenant/version-scoped keys, TTLs, after-commit version invalidation and safe database fallback on cache errors.
+- Feature-flagged Kafka inbox receiver with tenant resolution, metadata validation, idempotent durable receipt and V10 schema migration.
 - Docker Compose definitions for MySQL, Redis and Kafka.
 
 ## Verified backend CI evidence
