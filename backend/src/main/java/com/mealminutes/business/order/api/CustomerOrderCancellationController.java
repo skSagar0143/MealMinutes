@@ -7,6 +7,7 @@ import com.mealminutes.platform.tenant.domain.TenantContext;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Set;
 
 @RestController
+@PreAuthorize("hasRole('CUSTOMER')")
 @RequestMapping("/api/v1/customer/orders")
 @ConditionalOnExpression("${mealminutes.tenant-provisioning.enabled:false} and ${mealminutes.order-pricing.enabled:false}")
 public class CustomerOrderCancellationController {
