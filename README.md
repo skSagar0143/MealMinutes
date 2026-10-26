@@ -25,6 +25,7 @@ MealMinutes is a multi-tenant restaurant ordering and operations platform. **Zes
 - Idempotent checkout/order creation, customer order detail/history, restaurant order transitions, order history/audit/outbox records and unpaid-order cancellation rules.
 - Razorpay payment-intent creation, raw-body webhook signature verification, webhook event deduplication, payment/order state changes and transactional outbox writes.
 - React landing page/storefront and React Native/Expo menu-browsing foundation.
+- Tenant-aware Redis storefront caching with tenant/version-scoped keys, TTLs, after-commit version invalidation and safe database fallback on cache errors.
 - Docker Compose definitions for MySQL, Redis and Kafka.
 
 ## Latest verified backend CI
@@ -60,7 +61,7 @@ The tenant-backed workflows are feature-flagged and require the platform databas
 
 This project is **not production-ready yet**. Major remaining work includes:
 
-- Redis tenant-aware cache integration, cache invalidation and outage tests.
+- Real-Redis integration tests for tenant isolation, transaction rollback invalidation, cold-cache behavior and load/outage validation.
 - Kafka consumer idempotency, schema compatibility, retry/replay handling and dead-letter re-drive tooling.
 - Customer registration/verification, login throttling, password reset, key rotation and stronger security testing.
 - Customer web/mobile sign-in, cart, checkout, order history and notification experiences.
