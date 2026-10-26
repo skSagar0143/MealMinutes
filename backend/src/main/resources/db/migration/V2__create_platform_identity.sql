@@ -15,7 +15,7 @@ CREATE TABLE platform_user_account (
 CREATE TABLE platform_refresh_session (
     session_id VARCHAR(36) NOT NULL,
     user_id VARCHAR(36) NOT NULL,
-    token_hash CHAR(64) NOT NULL,
+    token_hash VARCHAR(64) NOT NULL,
     expires_at TIMESTAMP(6) NOT NULL,
     revoked_at TIMESTAMP(6) NULL,
     replaced_by_session_id VARCHAR(36) NULL,

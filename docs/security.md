@@ -32,3 +32,10 @@ Never commit real credentials, private keys, provider secrets, or production dat
 ## Current fail-closed baseline
 
 Spring Security is now present. The current filter chain is stateless, explicitly permits only health and limited info endpoints, and denies all other requests. This is intentionally not a usable authentication implementation; do not expose the service as a working API until RS256 authentication, refresh-token rotation/revocation, and authorization are implemented and tested. Do not replace this with `permitAll()` as a workaround.
+
+
+## Optional RS256 authentication implementation
+
+The code now includes an RS256 JWT encoder/decoder that loads PKCS#8 private and X.509 public PEM keys from configured resource locations, BCrypt password hashing, a short-lived access token, and opaque refresh tokens stored only as SHA-256 hashes. Refresh rotation uses a pessimistic row lock and revokes the prior session. The refresh cookie is HttpOnly, SameSite=Strict, scoped to `/api/v1/auth`, and Secure by default. Login, refresh and logout require the configured exact Origin. A platform administrator can be bootstrapped from `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD` environment variables; the password must be 16–72 characters and is never logged. Enable authentication only after configuring `MEALMINUTES_SECURITY_ENABLED=true`, RSA key locations and the trusted origin. Key generation and deployment key custody remain operator responsibilities; do not commit private keys.
+
+This is not yet a complete production identity system: login throttling, email verification, password reset, key rotation, CORS policy, session revocation on account compromise, and end-to-end authentication tests remain release blockers.

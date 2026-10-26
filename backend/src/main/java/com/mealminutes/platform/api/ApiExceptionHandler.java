@@ -3,6 +3,8 @@ package com.mealminutes.platform.api;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -36,6 +38,18 @@ public class ApiExceptionHandler {
     @ExceptionHandler(IllegalStateException.class)
     ProblemDetail handleConflict(IllegalStateException exception, HttpServletRequest request) {
         return problem(HttpStatus.CONFLICT, "Operation cannot be completed", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    ProblemDetail handleAuthentication(AuthenticationException exception, HttpServletRequest request) {
+        return problem(HttpStatus.UNAUTHORIZED, "Authentication failed",
+                "Credentials are invalid, expired, or revoked", request);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    ProblemDetail handleAccessDenied(AccessDeniedException exception, HttpServletRequest request) {
+        return problem(HttpStatus.FORBIDDEN, "Access denied",
+                "The caller is not permitted to perform this operation", request);
     }
 
     @ExceptionHandler(Exception.class)

@@ -29,7 +29,9 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AccessTokenResponse> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<AccessTokenResponse> login(@Valid @RequestBody LoginRequest request,
+                                                      @RequestHeader(name = "Origin", required = false) String origin) {
+        requireTrustedOrigin(origin);
         var tokens = authService.login(request.email(), request.password());
         return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie(tokens.refreshToken(), tokens.refreshExpiresInSeconds()).toString())
                 .body(new AccessTokenResponse(tokens.accessToken(), "Bearer", tokens.accessExpiresInSeconds()));
