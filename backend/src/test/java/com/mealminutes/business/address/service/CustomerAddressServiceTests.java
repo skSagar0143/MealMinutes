@@ -53,7 +53,7 @@ class CustomerAddressServiceTests {
                 any(RowMapper.class), eq("customer-1"), eq("address-2")))
                 .thenReturn(List.of(new CustomerAddressService.AddressRecord("address-2", false)));
         when(jdbc.update(anyString(), any(Object[].class))).thenReturn(1);
-        when(jdbc.query(contains("FROM customer_address WHERE customer_user_id = ? AND address_id = ?"),
+        when(jdbc.query(contains("SELECT address_id, label, recipient_name"),
                 any(RowMapper.class), eq("customer-1"), eq("address-2")))
                 .thenReturn(List.of(response("address-2", true)));
 
