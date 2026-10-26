@@ -135,13 +135,13 @@ Delivery is **at least once**, not exactly once end to end: a process can crash 
 
 ## Remaining release gaps
 
-- Inventory reservation and stock consistency.
-- Redis cache keys/invalidation and safe outage behavior.
-- Kafka outbox dispatch, consumer idempotency, retries and dead-letter recovery.
-- Customer web/mobile sign-in, cart/checkout/order history and notifications.
+- Inventory reservation and stock consistency under concurrent checkout.
+- Real-Redis integration tests for tenant isolation, transaction rollback invalidation, cold-cache behavior and load/outage handling.
+- Kafka consumer idempotency, schema compatibility checks, dead-letter re-drive tooling and consumer operational metrics. The tenant-aware outbox dispatcher with retries and database dead-letter state is implemented.
+- Customer web/mobile sign-in, cart/checkout/order history and notification delivery.
 - Restaurant dashboard and platform administration UI.
-- Promotions, delivery assignment, notifications and reviews.
-- Jurisdiction-aware tax/pricing policy.
+- Promotions/coupons, delivery assignment, notifications and reviews.
+- Jurisdiction-aware tax/pricing policy and refund/reconciliation workflows.
 - OpenAPI contract generation, end-to-end/load/security testing, production deployment, backups, monitoring and incident runbooks.
 
 Do not treat this application as production-ready until the release-blocking isolation, payment recovery, security and operational checks have passed.
