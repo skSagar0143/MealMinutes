@@ -36,7 +36,7 @@ class TenantMenuCacheTests {
     void readsCategoriesUsingTenantAndVersionScopedKey() {
         when(values.get("mealminutes:tenant:tenant-1:storefront:version")).thenReturn("4");
         when(values.get("mealminutes:tenant:tenant-1:storefront:v4:categories"))
-                .thenReturn("[{\"categoryId\":\"cat-1\",\"name\":\"Lunch\",\"slug\":\"lunch\",\"description\":null,\"sortOrder\":1}]");
+                .thenReturn("[{\"id\":\"cat-1\",\"name\":\"Lunch\",\"slug\":\"lunch\",\"description\":null,\"sortOrder\":1}]");
 
         try (TenantContext.Scope ignored = TenantContext.bind(tenant())) {
             assertThat(cache.getCategories()).containsExactly(
@@ -95,7 +95,7 @@ class TenantMenuCacheTests {
     void readsItemPageWithoutPuttingRawSearchTextInTheRedisKey() {
         when(values.get("mealminutes:tenant:tenant-1:storefront:version")).thenReturn("3");
         when(values.get(startsWith("mealminutes:tenant:tenant-1:storefront:v3:items:")))
-                .thenReturn("[{\"id\":\"item-1\",\"categoryId\":\"cat-1\",\"name\":\"Veg Bowl\",\"slug\":\"veg-bowl\",\"description\":null,\"price\":12.50,\"currency\":\"INR\",\"imageUrl\":null,\"vegetarian\":true,\"vegan\":true,\"allergens\":null,\"available\":true,\"displayOrder\":1}]");
+                .thenReturn("[{\"id\":\"item-1\",\"id\":\"cat-1\",\"name\":\"Veg Bowl\",\"slug\":\"veg-bowl\",\"description\":null,\"price\":12.50,\"currency\":\"INR\",\"imageUrl\":null,\"vegetarian\":true,\"vegan\":true,\"allergens\":null,\"available\":true,\"displayOrder\":1}]");
         try (TenantContext.Scope ignored = TenantContext.bind(tenant())) {
             var result = cache.getItems(null, "customer-private-search", 0, 20);
             assertThat(result).hasSize(1);
