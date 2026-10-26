@@ -41,7 +41,7 @@ class OrderCheckoutServiceTests {
         assertThat(response.taxTotal()).isEqualByComparingTo("2.00");
         assertThat(response.deliveryFee()).isEqualByComparingTo("0.00");
         assertThat(response.grandTotal()).isEqualByComparingTo("22.00");
-        verify(jdbc).update(contains("INSERT INTO customer_order"),any(Object[].class));
+        verify(jdbc).update(contains("INSERT INTO customer_order(order_id"),any(Object[].class));
         verify(jdbc).update(contains("INSERT INTO customer_order_item"),any(Object[].class));
         verify(jdbc).update(contains("UPDATE customer_cart"),any(Object[].class));
         verify(jdbc).update(contains("INSERT INTO outbox_event"),any(Object[].class));
