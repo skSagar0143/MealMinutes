@@ -34,7 +34,7 @@ class PaymentServiceTests {
     private final PaymentGateway gateway=mock(PaymentGateway.class);
     private final PaymentService service=new PaymentService(jdbc,tx,gateway,new ObjectMapper(),true);
 
-    @BeforeEach void setupTransaction(){when(tx.getTransaction(any(TransactionDefinition.class))).thenReturn(status);}
+    @BeforeEach void setupTransaction(){when(tx.getTransaction(any(TransactionDefinition.class))).thenReturn(status); when(gateway.providerName()).thenReturn("RAZORPAY");}
     @AfterEach void clearTenant(){TenantContext.clear();}
 
     @Test void createsProviderIntentAfterReservingIdempotentPaymentAttempt(){
