@@ -65,7 +65,7 @@ class CartServiceTests {
     }
 
     @Test void updatesQuantityAndRemovesItemsFromOwnedCart(){
-        when(jdbc.query(contains("SELECT branch_id FROM customer_cart"),any(RowMapper.class),eq("cart-1"),eq("user-1"))).thenReturn(List.of("branch-1"));
+        when(jdbc.query(anyString(),any(RowMapper.class),eq("cart-1"),eq("user-1"))).thenReturn(List.of("branch-1"));
         when(jdbc.query(contains("FROM menu_item"),any(RowMapper.class),eq("item-1")))
                 .thenReturn(List.of(new CartService.MenuPrice("item-1",new BigDecimal("7.00"),"INR")));
         when(jdbc.update(contains("UPDATE customer_cart_item"),eq(3),eq(new BigDecimal("7.00")),eq("cart-1"),eq("item-1"))).thenReturn(1);
