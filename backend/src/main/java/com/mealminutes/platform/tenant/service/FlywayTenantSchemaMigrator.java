@@ -13,8 +13,13 @@ public final class FlywayTenantSchemaMigrator implements TenantSchemaMigrator {
 
     public FlywayTenantSchemaMigrator(String jdbcUrlTemplate, String adminUsername,
                                       String adminPassword, String migrationLocation) {
+        this(jdbcUrlTemplate, adminUsername, adminPassword, migrationLocation, null);
+    }
+
+    FlywayTenantSchemaMigrator(String jdbcUrlTemplate, String adminUsername, String adminPassword,
+                               String migrationLocation, FlywayFactory factory) {
         if (jdbcUrlTemplate == null || !jdbcUrlTemplate.startsWith("jdbc:mysql://")
-                || !jdbcUrlTemplate.contains("{database}")
+                || jdbcUrlTemplate.indexOf("{database}") < 0
                 || adminUsername == null || adminUsername.isBlank()
                 || adminPassword == null || adminPassword.isBlank()
                 || migrationLocation == null || migrationLocation.isBlank()) {
@@ -24,13 +29,9 @@ public final class FlywayTenantSchemaMigrator implements TenantSchemaMigrator {
         this.adminUsername = adminUsername;
         this.adminPassword = adminPassword;
         this.migrationLocation = migrationLocation;
-        this.flywayFactory = (url, username, password, location) -> Flyway.configure().dataSource(url, username, password).locations(location).cleanDisabled(true).load();
-    }
-
-    FlywayTenantSchemaMigrator(String jdbcUrlTemplate, String adminUsername, String adminPassword,
-                               String migrationLocation, FlywayFactory flywayFactory) {
-        this(jdbcUrlTemplate, adminUsername, adminPassword, migrationLocation);
-        this.flywayFactory = flywayFactory;
+        this.flywayFactory = factory != null ? factory :
+                (url, username, password, location) -> Flyway.configure().dataSource(url, username, password)
+                        .locations(location).cleanDisabled(true).load();
     }
 
     @Override
