@@ -9,6 +9,7 @@ public final class FlywayTenantSchemaMigrator implements TenantSchemaMigrator {
     private final String adminUsername;
     private final String adminPassword;
     private final String migrationLocation;
+    private final FlywayFactory flywayFactory;
 
     public FlywayTenantSchemaMigrator(String jdbcUrlTemplate, String adminUsername,
                                       String adminPassword, String migrationLocation) {
@@ -23,15 +24,21 @@ public final class FlywayTenantSchemaMigrator implements TenantSchemaMigrator {
         this.adminUsername = adminUsername;
         this.adminPassword = adminPassword;
         this.migrationLocation = migrationLocation;
+        this.flywayFactory = (url, username, password, location) -> Flyway.configure().dataSource(url, username, password).locations(location).cleanDisabled(true).load();
+    }
+
+    FlywayTenantSchemaMigrator(String jdbcUrlTemplate, String adminUsername, String adminPassword,
+                               String migrationLocation, FlywayFactory flywayFactory) {
+        this(jdbcUrlTemplate, adminUsername, adminPassword, migrationLocation);
+        this.flywayFactory = flywayFactory;
     }
 
     @Override
     public int migrate(String databaseName) {
         if (databaseName == null || !DATABASE.matcher(databaseName).matches())
             throw new IllegalArgumentException("Invalid tenant database name");
-        Flyway flyway = Flyway.configure()
-                .dataSource(jdbcUrlTemplate.replace("{database}", databaseName), adminUsername, adminPassword)
-                .locations(migrationLocation).cleanDisabled(true).load();
+        Flyway flyway = flywayFactory.create(jdbcUrlTemplate.replace("{database}", databaseName),
+                adminUsername, adminPassword, migrationLocation);
         flyway.migrate();
         var current = flyway.info().current();
         if (current == null || current.getVersion() == null)
@@ -41,5 +48,10 @@ public final class FlywayTenantSchemaMigrator implements TenantSchemaMigrator {
         } catch (NumberFormatException exception) {
             throw new IllegalStateException("Tenant migration version must be an integer", exception);
         }
+    }
+
+    @FunctionalInterface
+    interface FlywayFactory {
+        Flyway create(String jdbcUrl, String username, String password, String location);
     }
 }
