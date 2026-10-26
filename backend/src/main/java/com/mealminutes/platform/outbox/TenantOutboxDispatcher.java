@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 @ConditionalOnExpression("${mealminutes.tenant-provisioning.enabled:false} and ${mealminutes.outbox.enabled:false}")
 public class TenantOutboxDispatcher {
     private static final Logger log = LoggerFactory.getLogger(TenantOutboxDispatcher.class);
+    private static final int REQUIRED_OUTBOX_SCHEMA_VERSION = 9;
     private static final String EVENT_ID_HEADER = "event_id";
     private static final String TENANT_ID_HEADER = "tenant_id";
     private static final String AGGREGATE_TYPE_HEADER = "aggregate_type";
@@ -76,6 +77,7 @@ public class TenantOutboxDispatcher {
         List<TenantRegistryEntry> eligible = tenants.findAll().stream()
                 .filter(tenant -> tenant.getLifecycleStatus() == TenantLifecycleStatus.ACTIVE)
                 .filter(tenant -> tenant.getProvisioningStatus() == ProvisioningStatus.SUCCEEDED)
+                .filter(tenant -> tenant.getSchemaVersion() != null && tenant.getSchemaVersion() >= REQUIRED_OUTBOX_SCHEMA_VERSION)
                 .filter(tenant -> tenant.getTenantDatabaseName() != null && tenant.getDatabaseSecretReference() != null)
                 .toList();
         for (TenantRegistryEntry tenant : eligible) {
