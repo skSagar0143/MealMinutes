@@ -1,6 +1,7 @@
 package com.mealminutes.platform.tenant.persistence;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +14,7 @@ import javax.sql.DataSource;
  * application fail-closed instead of inventing or hardcoding tenant passwords.
  */
 @Configuration(proxyBeanMethods = false)
+@ConditionalOnProperty(prefix = "mealminutes.tenant-datasource", name = "standalone-enabled", havingValue = "true")
 @ConditionalOnBean(TenantDatabaseCredentialsProvider.class)
 public class TenantDataSourceConfiguration {
     @Bean

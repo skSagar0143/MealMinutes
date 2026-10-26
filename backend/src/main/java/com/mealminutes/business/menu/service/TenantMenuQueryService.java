@@ -10,7 +10,6 @@ import com.mealminutes.platform.tenant.service.TenantProvisionerUnavailableExcep
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
@@ -41,7 +40,6 @@ public class TenantMenuQueryService {
         return template;
     }
 
-    @Transactional(readOnly = true)
     public java.util.Optional<RestaurantProfileResponse> getRestaurantProfile() {
         List<RestaurantProfileResponse> profiles = jdbc().query("""
                 SELECT restaurant_id, restaurant_name, description, logo_url,
