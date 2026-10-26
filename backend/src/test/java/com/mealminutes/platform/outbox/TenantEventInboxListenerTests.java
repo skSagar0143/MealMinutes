@@ -1,6 +1,5 @@
 package com.mealminutes.platform.outbox;
 
-import com.mealminutes.platform.tenant.domain.ProvisioningStatus;
 import com.mealminutes.platform.tenant.domain.TenantContext;
 import com.mealminutes.platform.tenant.domain.TenantLifecycleStatus;
 import com.mealminutes.platform.tenant.domain.TenantRegistryEntry;
@@ -15,7 +14,6 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,25 +40,28 @@ class TenantEventInboxListenerTests {
 
     @Test
     void persistsValidEventInTenantScopedInbox() {
-        when(tenants.findById("tenant-1")).thenReturn(Optional.of(activeTenant(10)));
+        TenantRegistryEntry tenant = activeTenant(10);
+        when(tenants.findById(tenant.getTenantId())).thenReturn(Optional.of(tenant));
         when(jdbc.update(anyString(), any(Object[].class))).thenReturn(1);
 
-        listener().receive(eventRecord());
+        listener().receive(eventRecord(tenant.getTenantId()));
 
         verify(jdbc).update(contains("INSERT IGNORE INTO inbox_event"),
-                eq("event-1"), eq("tenant-1"), eq("ORDER"), eq("order-1"),
+                eq("event-1"), eq(tenant.getTenantId()), eq("ORDER"), eq("order-1"),
                 eq("order.created"), eq(1), eq("corr-1"), eq("{\"orderId\":\"order-1\"}"));
         assertThat(TenantContext.currentOrNull()).isNull();
     }
 
     @Test
     void acceptsRedeliveryThroughIdempotentInsertRatherThanRepeatingSideEffects() {
-        when(tenants.findById("tenant-1")).thenReturn(Optional.of(activeTenant(10)));
+        TenantRegistryEntry tenant = activeTenant(10);
+        when(tenants.findById(tenant.getTenantId())).thenReturn(Optional.of(tenant));
         when(jdbc.update(anyString(), any(Object[].class))).thenReturn(1, 0);
         TenantEventInboxListener listener = listener();
+        ConsumerRecord<String, String> record = eventRecord(tenant.getTenantId());
 
-        listener.receive(eventRecord());
-        listener.receive(eventRecord());
+        listener.receive(record);
+        listener.receive(record);
 
         verify(jdbc, times(2)).update(contains("INSERT IGNORE INTO inbox_event"), any(Object[].class));
     }
@@ -81,7 +82,7 @@ class TenantEventInboxListenerTests {
     void rejectsUnknownTenant() {
         when(tenants.findById("tenant-1")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> listener().receive(eventRecord()))
+        assertThatThrownBy(() -> listener().receive(eventRecord("tenant-1")))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("unknown tenant");
         verifyNoInteractions(jdbc);
@@ -89,9 +90,10 @@ class TenantEventInboxListenerTests {
 
     @Test
     void rejectsTenantWithoutInboxMigration() {
-        when(tenants.findById("tenant-1")).thenReturn(Optional.of(activeTenant(9)));
+        TenantRegistryEntry tenant = activeTenant(9);
+        when(tenants.findById(tenant.getTenantId())).thenReturn(Optional.of(tenant));
 
-        assertThatThrownBy(() -> listener().receive(eventRecord()))
+        assertThatThrownBy(() -> listener().receive(eventRecord(tenant.getTenantId())))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("inbox migration");
         verifyNoInteractions(jdbc);
@@ -99,7 +101,7 @@ class TenantEventInboxListenerTests {
 
     @Test
     void rejectsInvalidSchemaVersionHeader() {
-        ConsumerRecord<String, String> record = eventRecord();
+        ConsumerRecord<String, String> record = eventRecord("tenant-1");
         record.headers().remove("schema_version");
         record.headers().add(new RecordHeader("schema_version", bytes("not-a-number")));
 
@@ -119,11 +121,11 @@ class TenantEventInboxListenerTests {
         return tenant;
     }
 
-    private static ConsumerRecord<String, String> eventRecord() {
+    private static ConsumerRecord<String, String> eventRecord(String tenantId) {
         ConsumerRecord<String, String> record = new ConsumerRecord<>("mealminutes.events", 0, 0L,
                 "order-1", "{\"orderId\":\"order-1\"}");
         record.headers().add(new RecordHeader("event_id", bytes("event-1")));
-        record.headers().add(new RecordHeader("tenant_id", bytes("tenant-1")));
+        record.headers().add(new RecordHeader("tenant_id", bytes(tenantId)));
         record.headers().add(new RecordHeader("aggregate_type", bytes("ORDER")));
         record.headers().add(new RecordHeader("event_type", bytes("order.created")));
         record.headers().add(new RecordHeader("schema_version", bytes("1")));
@@ -134,3 +136,4 @@ class TenantEventInboxListenerTests {
     private static byte[] bytes(String value) {
         return value.getBytes(StandardCharsets.UTF_8);
     }
+}
