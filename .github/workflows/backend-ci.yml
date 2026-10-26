@@ -42,6 +42,11 @@ jobs:
           java-version: '21'
           cache: maven
       - name: Run tests and JaCoCo report
+        env:
+          TENANT_TEST_ADMIN_JDBC_URL: jdbc:mysql://127.0.0.1:3306/mysql?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC
+          TENANT_TEST_JDBC_URL_TEMPLATE: jdbc:mysql://127.0.0.1:3306/{database}?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC
+          TENANT_TEST_ADMIN_USERNAME: root
+          TENANT_TEST_ADMIN_PASSWORD: local_root_only_change_me
         run: mvn -B -f backend/pom.xml verify
       - name: Upload JaCoCo report
         if: always()
