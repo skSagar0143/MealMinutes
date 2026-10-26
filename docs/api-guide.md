@@ -112,6 +112,15 @@ Payment endpoints require `MEALMINUTES_PAYMENT_ENABLED=true`, tenant provisionin
 
 Payment intent creation, signed webhook processing, event deduplication, payment/order state updates and outbox writes are implemented and covered by tests. Refund execution, provider reconciliation jobs, manual recovery tooling and live provider verification are not complete.
 
+## Redis storefront cache
+
+Redis caching is disabled by default. Enable it with `MEALMINUTES_REDIS_ENABLED=true`, configure `REDIS_HOST`, `REDIS_PORT` and optional `REDIS_PASSWORD`, and start the Redis service in `compose.yaml`.
+
+- Restaurant profile, active menu categories and paginated menu-item results are cached with a configurable TTL (`MEALMINUTES_REDIS_CACHE_TTL_SECONDS`, default 60 seconds).
+- Keys are scoped by tenant ID and a tenant-specific cache version. Search/category/page dimensions are hashed rather than stored raw in the Redis key.
+- Menu writes increment the tenant cache version after their database transaction commits; profile updates invalidate after commit. Old entries expire naturally.
+- Redis read/write failures fall back to MySQL. If invalidation fails during a Redis outage, stale entries can remain visible until their TTL expires; monitor Redis availability and keep the TTL bounded.
+
 ## Transactional outbox and Kafka
 
 The dispatcher is disabled by default. For local development, start the Kafka service in `compose.yaml`, then configure `KAFKA_BOOTSTRAP_SERVERS=localhost:9092`, `MEALMINUTES_TENANT_PROVISIONING_ENABLED=true`, and `MEALMINUTES_OUTBOX_ENABLED=true` with valid tenant-database admin credentials and tenant secrets.
