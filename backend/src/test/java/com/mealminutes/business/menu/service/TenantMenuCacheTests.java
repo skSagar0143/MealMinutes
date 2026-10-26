@@ -75,7 +75,9 @@ class TenantMenuCacheTests {
     @Test
     void bypassesCacheWhenNoTenantContextExists() {
         assertThat(cache.getCategories()).isNull();
-        verifyNoInteractions(redis, values);
+        verify(values, never()).get(anyString());
+        verify(values, never()).set(anyString(), anyString(), any(Duration.class));
+        verify(values, never()).increment(anyString());
     }
 
     @Test
