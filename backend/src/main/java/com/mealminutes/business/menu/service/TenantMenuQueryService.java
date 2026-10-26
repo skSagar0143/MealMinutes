@@ -43,7 +43,7 @@ public class TenantMenuQueryService {
 
     @Transactional(readOnly = true)
     public java.util.Optional<RestaurantProfileResponse> getRestaurantProfile() {
-        List<RestaurantProfileResponse> profiles = jdbc.query("""
+        List<RestaurantProfileResponse> profiles = jdbc().query("""
                 SELECT restaurant_id, restaurant_name, description, logo_url,
                        support_email, support_phone, currency, timezone
                 FROM restaurant_profile
@@ -59,7 +59,7 @@ public class TenantMenuQueryService {
 
     @Transactional(readOnly = true)
     public List<MenuCategoryResponse> listCategories() {
-        return jdbc.query("""
+        return jdbc().query("""
                 SELECT category_id, name, slug, description, sort_order
                 FROM menu_category
                 WHERE is_active = TRUE
@@ -105,7 +105,7 @@ public class TenantMenuQueryService {
                 rs.getString("currency"), rs.getString("image_url"), rs.getBoolean("vegetarian"),
                 rs.getBoolean("vegan"), rs.getString("allergens"), rs.getBoolean("is_available"),
                 rs.getInt("display_order"));
-        return jdbc.query(sql, mapper, normalizedCategory, normalizedCategory,
+        return jdbc().query(sql, mapper, normalizedCategory, normalizedCategory,
                 normalizedSearch, normalizedSearch, normalizedSearch, size, offset);
     }
 }
