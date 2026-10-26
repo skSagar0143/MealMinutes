@@ -54,7 +54,7 @@ public class SecurityConfiguration {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         if (decoders.getIfAvailable() == null) {
             http.authorizeHttpRequests(auth -> auth.requestMatchers(
-                    "/actuator/health", "/actuator/health/**", "/actuator/info", "/api/v1/tenant-domains/verify").permitAll().anyRequest().denyAll());
+                    "/actuator/health", "/actuator/health/**", "/actuator/info", "/api/v1/tenant-domains/verify", "/api/v1/storefront/**").permitAll().anyRequest().denyAll());
         } else {
             http.authorizeHttpRequests(auth -> auth
                     .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info", "/api/v1/tenant-domains/verify").permitAll()
