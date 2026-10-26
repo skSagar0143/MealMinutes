@@ -31,7 +31,7 @@ class RestaurantProfileServiceTests {
     void createsFirstProfileAndWritesAuditAndOutbox() {
         when(jdbc.query(contains("WHERE is_active = TRUE ORDER BY created_at ASC LIMIT 1 FOR UPDATE"),
                 any(RowMapper.class))).thenReturn(List.of());
-        when(jdbc.query(contains("SELECT restaurant_id FROM restaurant_profile ORDER BY created_at ASC"),
+        when(jdbc.query(contains("ORDER BY created_at ASC, restaurant_id ASC LIMIT 1 FOR UPDATE"),
                 any(RowMapper.class))).thenReturn(List.of());
         when(jdbc.update(anyString(), any(Object[].class))).thenReturn(1);
 
