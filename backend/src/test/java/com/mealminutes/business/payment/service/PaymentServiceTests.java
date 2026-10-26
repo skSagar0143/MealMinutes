@@ -158,8 +158,21 @@ class PaymentServiceTests {
     }
     private String capturedBody(String event,long amount){return capturedBody(event,amount,null);}
     private String capturedBody(String event,long amount,String error){
-        String suffix=error==null?"":" , \"error_code\":\""+error+"\"";
-        return "{\"event\":\""+event+"\",\"payload\":{\"payment\":{\"entity\":{\"id\":\"pay_123\",\"order_id\":\"order_rzp_1\",\"amount\":"+amount+",\"currency\":\"INR\",\"status\":\""+("payment.captured".equals(event)?"captured":"failed")+"\""+suffix+"}}}}";
+        java.util.Map<String,Object> entity = new java.util.LinkedHashMap<>();
+        entity.put("id", "pay_123");
+        entity.put("order_id", "order_rzp_1");
+        entity.put("amount", amount);
+        entity.put("currency", "INR");
+        entity.put("status", "payment.captured".equals(event) ? "captured" : "failed");
+        if (error != null) entity.put("error_code", error);
+        java.util.Map<String,Object> envelope = java.util.Map.of(
+                "event", event,
+                "payload", java.util.Map.of("payment", java.util.Map.of("entity", entity)));
+        try {
+            return new ObjectMapper().writeValueAsString(envelope);
+        } catch (Exception ex) {
+            throw new AssertionError("Unable to serialize payment webhook test fixture", ex);
+        }
     }
     private TenantContext.TenantDescriptor tenant(){
         return new TenantContext.TenantDescriptor("tenant-1","abc-food","tenant_abc_food","secret://db");
