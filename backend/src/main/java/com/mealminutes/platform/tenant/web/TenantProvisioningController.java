@@ -31,7 +31,7 @@ public class TenantProvisioningController {
 
     @GetMapping
     public Page<TenantSummary> list(@PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return Page.empty(pageable);
+        return provisioning.list(pageable).map(this::summary);
     }
 
     @PostMapping("/{tenantId}/approve")
