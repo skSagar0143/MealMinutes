@@ -34,7 +34,7 @@ class PaymentServiceTests {
     private final PaymentGateway gateway=mock(PaymentGateway.class);
     private final PaymentService service=new PaymentService(jdbc,tx,gateway,new ObjectMapper(),true);
 
-    @BeforeEach void setupTransaction(){when(tx.getTransaction(any(TransactionDefinition.class))).thenReturn(status);}
+    @BeforeEach void setupTransaction(){when(tx.getTransaction(any(TransactionDefinition.class))).thenReturn(status); when(gateway.providerName()).thenReturn("RAZORPAY");}
     @AfterEach void clearTenant(){TenantContext.clear();}
 
     @Test void createsProviderIntentAfterReservingIdempotentPaymentAttempt(){
@@ -159,7 +159,7 @@ class PaymentServiceTests {
     private String capturedBody(String event,long amount){return capturedBody(event,amount,null);}
     private String capturedBody(String event,long amount,String error){
         String suffix=error==null?"":" , \"error_code\":\""+error+"\"";
-        return "{\"event\":\""+event+"\",\"payload\":{\"payment\":{\"entity\":{\"id\":\"pay_123\",\"order_id\":\"order_rzp_1\",\"amount\":"+amount+",\"currency\":\"INR\",\"status\":\""+("payment.captured".equals(event)?"captured":"failed")+"\""+suffix+"}}}}}";
+        return "{\"event\":\""+event+"\",\"payload\":{\"payment\":{\"entity\":{\"id\":\"pay_123\",\"order_id\":\"order_rzp_1\",\"amount\":"+amount+",\"currency\":\"INR\",\"status\":\""+("payment.captured".equals(event)?"captured":"failed")+"\""+suffix+"}}}}";
     }
     private TenantContext.TenantDescriptor tenant(){
         return new TenantContext.TenantDescriptor("tenant-1","abc-food","tenant_abc_food","secret://db");
