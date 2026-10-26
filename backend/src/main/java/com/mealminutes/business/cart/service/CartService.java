@@ -174,5 +174,5 @@ public class CartService {
             throw new IllegalArgumentException("notes must be at most 500 characters");
     }
     private static String safeNotes(String notes) { return notes == null || notes.isBlank() ? null : notes.strip(); }
-    private record MenuPrice(String itemId, BigDecimal price, String currency) { }
+    record MenuPrice(String itemId, BigDecimal price, String currency) { }
 }
