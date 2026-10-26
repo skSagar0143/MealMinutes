@@ -104,4 +104,41 @@ class TenantMenuManagementServiceTests {
     private TenantContext.TenantDescriptor tenant() {
         return new TenantContext.TenantDescriptor("tenant-1", "abc-food", "tenant_abc_food", "secret://abc");
     }
+
+    @Test void listsItemsWithoutOptionalFiltersWhenRequested() {
+        when(jdbc.query(anyString(), any(RowMapper.class), any(Object[].class))).thenReturn(List.of());
+        assertThat(service.listItems(null, true, true)).isEmpty();
+        var sql = org.mockito.ArgumentCaptor.forClass(String.class);
+        verify(jdbc).query(sql.capture(), any(RowMapper.class), any(Object[].class));
+        assertThat(sql.getValue()).contains("WHERE 1 = 1")
+                .doesNotContain("i.is_available = TRUE", "c.is_active = TRUE", "i.category_id = ?");
+    }
+
+    @Test void defaultsCurrencyAndAcceptsExplicitMenuSlug() {
+        bindTenant();
+        when(jdbc.queryForObject(contains("SELECT COUNT(*) FROM menu_category"),eq(Integer.class),eq("cat-1"))).thenReturn(1);
+        when(jdbc.update(anyString(), any(Object[].class))).thenReturn(1);
+        MenuItemResponse result=service.createItem(new TenantMenuManagementService.CreateMenuItemCommand(
+                "cat-1","Green Tea","green-tea",null,new BigDecimal("5.00"),null,null,false,true,"  ",0),"user-1");
+        assertThat(result.slug()).isEqualTo("green-tea");
+        assertThat(result.currency()).isEqualTo("INR");
+        assertThat(result.imageUrl()).isNull();
+        assertThat(result.allergens()).isNull();
+    }
+
+    @Test void rejectsDuplicateMenuItemSlugAndOversizedOptionalText() {
+        bindTenant();
+        when(jdbc.queryForObject(contains("SELECT COUNT(*) FROM menu_category"),eq(Integer.class),eq("cat-1"))).thenReturn(1);
+        when(jdbc.update(contains("INSERT INTO menu_item"),any(Object[].class)))
+                .thenThrow(new DuplicateKeyException("duplicate"));
+        assertThatThrownBy(() -> service.createItem(new TenantMenuManagementService.CreateMenuItemCommand(
+                "cat-1","Tea","tea",null,new BigDecimal("1.00"),"INR",null,false,false,null,0),"user-1"))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("already exists");
+        assertThatThrownBy(() -> service.createCategory(new TenantMenuManagementService.CreateCategoryCommand(
+                "Drinks",null,"x".repeat(501),0),"user-1")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service.createItem(new TenantMenuManagementService.CreateMenuItemCommand(
+                "cat-1","Tea",null,null,null,"INR",null,false,false,null,0),"user-1"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
 }
