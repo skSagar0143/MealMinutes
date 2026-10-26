@@ -60,7 +60,7 @@ public class SecurityConfiguration {
         } else {
             http.authorizeHttpRequests(auth -> auth
                     .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info", "/api/v1/tenant-domains/verify", "/api/v1/storefront/**").permitAll()
-                    .requestMatchers("/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/logout").permitAll()
+                    .requestMatchers("/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/logout", "/api/v1/webhooks/razorpay").permitAll()
                     .requestMatchers("/api/v1/platform/**").hasRole("PLATFORM_ADMIN")
                     .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(converter)));

@@ -39,7 +39,7 @@ class TenantSchemaMigrationIntegrationTests {
                     .locations("classpath:db/tenant-migration").cleanDisabled(true).load();
             flyway.migrate();
 
-            assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("3");
+            assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("4");
             try (var connection = DriverManager.getConnection(tenantUrl, username, password);
                  ResultSet columns = connection.getMetaData().getColumns(databaseName, null, "customer_cart", "active_cart_key")) {
                 assertThat(columns.next()).isTrue();
@@ -51,6 +51,14 @@ class TenantSchemaMigrationIntegrationTests {
             try (var connection = DriverManager.getConnection(tenantUrl, username, password);
                  ResultSet columns = connection.getMetaData().getColumns(databaseName, null, "customer_order", "fulfillment_type")) {
                 assertThat(columns.next()).isTrue();
+            }
+            try (var connection = DriverManager.getConnection(tenantUrl, username, password);
+                 ResultSet columns = connection.getMetaData().getColumns(databaseName, null, "payment_transaction", "provider_order_id")) {
+                assertThat(columns.next()).isTrue();
+            }
+            try (var connection = DriverManager.getConnection(tenantUrl, username, password);
+                 ResultSet tables = connection.getMetaData().getTables(databaseName, null, "payment_webhook_event", new String[]{"TABLE"})) {
+                assertThat(tables.next()).isTrue();
             }
             try (var connection = DriverManager.getConnection(tenantUrl, username, password);
                  ResultSet tables = connection.getMetaData().getTables(databaseName, null, "restaurant_profile", new String[]{"TABLE"})) {
