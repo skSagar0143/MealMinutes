@@ -125,19 +125,19 @@ public class TenantMenuCache {
         if (key == null || value == null) return;
         try {
             String json = objectMapper.writeValueAsString(value);
-            redisProvider.getIfAvailable().opsForValue().set(key, json, Duration.ofSeconds(ttlSeconds));
+            redisProvider.get().opsForValue().set(key, json, Duration.ofSeconds(ttlSeconds));
         } catch (Exception failure) {
             log.warn("Redis storefront cache write failed ({})", failure.getClass().getSimpleName());
         }
     }
 
     private String cacheKey(String suffix) {
-        if (!enabled || objectMapper == null || redisProvider.getIfAvailable() == null) return null;
+        if (!enabled || objectMapper == null || redisProvider.get() == null) return null;
         TenantContext.TenantDescriptor tenant = TenantContext.currentOrNull();
         if (tenant == null) return null;
         String versionKey = KEY_PREFIX + tenant.tenantId() + ":storefront:version";
         try {
-            String version = redisProvider.getIfAvailable().opsForValue().get(versionKey);
+            String version = redisProvider.get().opsForValue().get(versionKey);
             return KEY_PREFIX + tenant.tenantId() + ":storefront:v" + (version == null ? "0" : version) + ":" + suffix;
         } catch (RuntimeException failure) {
             log.warn("Redis storefront cache version lookup failed; using database fallback ({})",
@@ -147,9 +147,9 @@ public class TenantMenuCache {
     }
 
     private void evictTenant(String tenantId) {
-        if (!enabled || redisProvider.getIfAvailable() == null) return;
+        if (!enabled || redisProvider.get() == null) return;
         try {
-            redisProvider.getIfAvailable().opsForValue().increment(KEY_PREFIX + tenantId + ":storefront:version");
+            redisProvider.get().opsForValue().increment(KEY_PREFIX + tenantId + ":storefront:version");
         } catch (RuntimeException failure) {
             log.error("Unable to invalidate storefront cache for tenant {}; entries expire after {} seconds",
                     tenantId, ttlSeconds, failure);
