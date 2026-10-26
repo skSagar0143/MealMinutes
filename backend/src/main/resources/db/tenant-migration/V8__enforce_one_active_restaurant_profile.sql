@@ -1,11 +1,10 @@
--- Keep one active restaurant profile per tenant while preserving inactive historical rows.
+-- Preserve inactive profiles and keep the earliest active profile as the tenant's active profile.
 UPDATE restaurant_profile AS profile_row
 JOIN (
     SELECT MIN(restaurant_id) AS keep_restaurant_id
     FROM restaurant_profile
     WHERE is_active = TRUE
-) AS active_profile
-    ON active_profile.keep_restaurant_id = profile_row.restaurant_id
+) AS active_profile ON TRUE
 SET profile_row.is_active = FALSE
 WHERE profile_row.is_active = TRUE
   AND profile_row.restaurant_id <> active_profile.keep_restaurant_id;
