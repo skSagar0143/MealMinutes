@@ -48,13 +48,14 @@ Updated: 2026-10-26. This is a living tracker; statuses must reflect verified re
 
 ## Phase 6 — Web and mobile
 
-- [ ] React + TypeScript public landing, tenant storefront, restaurant dashboard and admin portal.
-- [ ] Accessible responsive glassmorphism design, themes and real API loading/error states.
-- [ ] React Native + Expo customer app with secure credential storage and resilient checkout.
+- [x] React + TypeScript public landing page and tenant menu-browsing storefront foundation.
+- [x] Responsive glassmorphism design foundation, light/dark toggle, loading/error/empty states and real menu API calls.
+- [x] React Native + Expo customer menu-browsing foundation with search/category filters and loading/error/empty states.
+- [ ] Complete restaurant dashboard, platform admin portal, customer cart/checkout/order history, secure mobile authentication and credential storage.
 
 ## Phase 7 — Delivery quality and operations
 
-- [ ] CI: backend tests, JaCoCo thresholds, static/dependency checks, frontend lint/typecheck/tests/build.
+- [ ] CI: backend tests, JaCoCo thresholds, static/dependency checks, frontend lint/typecheck/tests/build, and mobile typecheck. Web CI test/typecheck/build currently passes; mobile CI remains to be verified.
 - [ ] Dockerfiles, local Compose health checks and resource limits.
 - [x] Add initial security, database ownership, API surface, and testing documentation.
 - [ ] Add deployment, TLS/DNS, secrets, backup/restore, monitoring, rollback and incident-response runbooks.

@@ -1,0 +1,25 @@
+name: Mobile CI
+on:
+  push:
+    branches: [main]
+    paths: ['mobile/**', '.github/workflows/mobile-ci.yml']
+  pull_request:
+    branches: [main]
+    paths: ['mobile/**', '.github/workflows/mobile-ci.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mobile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        working-directory: mobile
+        run: npm install --no-audit --no-fund
+      - name: Type check
+        working-directory: mobile
+        run: npm run typecheck
