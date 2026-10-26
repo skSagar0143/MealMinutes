@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -133,6 +132,7 @@ public class TenantOutboxDispatcher {
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
             recordFailure(event, interrupted);
+            return false;
         } catch (Exception failure) {
             recordFailure(event, failure);
         }
@@ -145,7 +145,7 @@ public class TenantOutboxDispatcher {
         if (message.length() > 1000) message = message.substring(0, 1000);
         boolean deadLetter = attempts >= maxAttempts;
         long multiplier = 1L << Math.min(Math.max(0, event.attemptCount()), 12);
-        long delaySeconds = Math.min(3600, baseBackoffSeconds * multiplier);
+        long delaySeconds = Math.min(3600L, Math.min(3600L, baseBackoffSeconds) * multiplier);
         Timestamp nextAttempt = deadLetter ? null : Timestamp.from(Instant.now().plusSeconds(delaySeconds));
         Timestamp deadLetteredAt = deadLetter ? Timestamp.from(Instant.now()) : null;
         tenantJdbc.update("""
