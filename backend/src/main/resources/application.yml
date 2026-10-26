@@ -101,6 +101,9 @@ server:
     include-exception: false
 
 management:
+  health:
+    redis:
+      enabled: ${MEALMINUTES_REDIS_ENABLED:false}
   endpoints:
     web:
       exposure:
