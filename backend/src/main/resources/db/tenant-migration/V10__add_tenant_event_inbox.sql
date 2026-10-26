@@ -1,0 +1,20 @@
+CREATE TABLE inbox_event (
+    event_id VARCHAR(36) NOT NULL,
+    tenant_id VARCHAR(36) NOT NULL,
+    aggregate_type VARCHAR(80) NOT NULL,
+    aggregate_id VARCHAR(36) NOT NULL,
+    event_type VARCHAR(120) NOT NULL,
+    schema_version INT NOT NULL,
+    correlation_id VARCHAR(64) NULL,
+    payload JSON NOT NULL,
+    processing_status VARCHAR(24) NOT NULL DEFAULT 'RECEIVED',
+    attempt_count INT NOT NULL DEFAULT 0,
+    received_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    processed_at TIMESTAMP(6) NULL,
+    last_error VARCHAR(1000) NULL,
+    CONSTRAINT pk_inbox_event PRIMARY KEY (event_id),
+    CONSTRAINT ck_inbox_event_schema_version CHECK (schema_version >= 1),
+    CONSTRAINT ck_inbox_event_attempt_count CHECK (attempt_count >= 0),
+    CONSTRAINT ck_inbox_event_status CHECK (processing_status IN ('RECEIVED', 'PROCESSING', 'PROCESSED', 'DEAD_LETTERED')),
+    INDEX ix_inbox_event_pending (processing_status, received_at)
+) ENGINE=InnoDB;
