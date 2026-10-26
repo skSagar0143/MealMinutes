@@ -12,6 +12,9 @@ public interface TenantDomainRepository extends JpaRepository<TenantDomain, Stri
     Optional<TenantDomain> findByHostnameAndVerificationStatus(
             String hostname, DomainVerificationStatus verificationStatus);
 
+    @EntityGraph(attributePaths = "tenant")
+    Optional<TenantDomain> findByHostname(String hostname);
+
     boolean existsByHostname(String hostname);
 
     Optional<TenantDomain> findFirstByTenant_TenantIdAndVerificationStatus(
