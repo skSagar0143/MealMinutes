@@ -120,6 +120,7 @@ class TenantOutboxDispatcherTests {
 
     private static TenantRegistryEntry activeTenant() {
         TenantRegistryEntry tenant = new TenantRegistryEntry("tenant-a");
+        tenant.transitionTo(TenantLifecycleStatus.PENDING_VERIFICATION);
         tenant.transitionTo(TenantLifecycleStatus.APPROVED);
         tenant.beginProvisioning();
         tenant.completeProvisioning("tenant_a_db", "secret://tenant-a", 9);
