@@ -100,6 +100,16 @@ class TenantOutboxDispatcherTests {
     }
 
     @Test
+    void skipsActiveTenantsUntilOutboxRetryMigrationIsApplied() {
+        when(tenants.findAll()).thenReturn(List.of(activeTenant(8)));
+        var dispatcher = dispatcher(10, 3);
+
+        dispatcher.dispatchPendingEvents();
+
+        verifyNoInteractions(jdbc, kafka);
+    }
+
+    @Test
     void stopsPollingWhenThereAreNoPendingEvents() {
         when(tenants.findAll()).thenReturn(List.of(activeTenant()));
         when(jdbc.query(contains("FROM outbox_event"), any(RowMapper.class))).thenReturn(List.of());
@@ -119,11 +129,15 @@ class TenantOutboxDispatcherTests {
     }
 
     private static TenantRegistryEntry activeTenant() {
+        return activeTenant(9);
+    }
+
+    private static TenantRegistryEntry activeTenant(int schemaVersion) {
         TenantRegistryEntry tenant = new TenantRegistryEntry("tenant-a");
         tenant.transitionTo(TenantLifecycleStatus.PENDING_VERIFICATION);
         tenant.transitionTo(TenantLifecycleStatus.APPROVED);
         tenant.beginProvisioning();
-        tenant.completeProvisioning("tenant_a_db", "secret://tenant-a", 9);
+        tenant.completeProvisioning("tenant_a_db", "secret://tenant-a", schemaVersion);
         tenant.transitionTo(TenantLifecycleStatus.ACTIVE);
         return tenant;
     }
