@@ -33,6 +33,12 @@ spring:
       properties:
         "[enable.idempotence]": true
         "[max.in.flight.requests.per.connection]": 5
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: ${REDIS_TIMEOUT_MS:1000}ms
 
 mealminutes:
   tenant-datasource:
@@ -73,6 +79,9 @@ mealminutes:
     enabled: ${MEALMINUTES_ORDER_PRICING_ENABLED:false}
     tax-rate: ${MEALMINUTES_ORDER_TAX_RATE:0.00}
     delivery-fee: ${MEALMINUTES_ORDER_DELIVERY_FEE:0.00}
+  redis:
+    enabled: ${MEALMINUTES_REDIS_ENABLED:false}
+    cache-ttl-seconds: ${MEALMINUTES_REDIS_CACHE_TTL_SECONDS:60}
   outbox:
     enabled: ${MEALMINUTES_OUTBOX_ENABLED:false}
     topic: ${MEALMINUTES_OUTBOX_TOPIC:mealminutes.events}
