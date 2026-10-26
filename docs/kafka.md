@@ -56,7 +56,7 @@ Do not put passwords, private keys, raw payment credentials or unnecessary perso
 
 ## Enable the inbox receiver
 
-The receiver is disabled by default and requires tenant provisioning, tenant datasource/secret configuration, and the V10 tenant migration. In a configured local environment:
+The receiver is disabled by default and requires tenant provisioning, tenant datasource/secret configuration, and the V10 tenant migration. Failed listener deliveries use a bounded retry policy (initial delivery plus the configured retries); exhausted records are published to `<source-topic>.DLT` by default. Provision the DLT with at least as many partitions as the source topic and ensure the consumer principal can publish to it before enabling the receiver. Configure `MEALMINUTES_CONSUMER_RETRY_INTERVAL_MS`, `MEALMINUTES_CONSUMER_RETRY_ATTEMPTS` (0–10), and `MEALMINUTES_CONSUMER_DLT_SUFFIX` as needed. If DLT publication fails, the error is surfaced rather than treating recovery as successful. In a configured local environment:
 
 ```powershell
 $env:MEALMINUTES_TENANT_PROVISIONING_ENABLED = "true"
