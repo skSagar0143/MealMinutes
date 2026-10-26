@@ -33,6 +33,15 @@ mealminutes:
     min-idle-per-tenant: ${TENANT_DB_MIN_IDLE:0}
     connection-timeout-ms: ${TENANT_DB_CONNECTION_TIMEOUT_MS:3000}
     idle-timeout-ms: ${TENANT_DB_IDLE_TIMEOUT_MS:60000}
+  security:
+    enabled: ${MEALMINUTES_SECURITY_ENABLED:false}
+    private-key-location: ${MEALMINUTES_RSA_PRIVATE_KEY_LOCATION:}
+    public-key-location: ${MEALMINUTES_RSA_PUBLIC_KEY_LOCATION:}
+    issuer: ${MEALMINUTES_JWT_ISSUER:https://mealminutes.local}
+    access-token-ttl-seconds: ${MEALMINUTES_ACCESS_TOKEN_TTL_SECONDS:900}
+    refresh-token-ttl-seconds: ${MEALMINUTES_REFRESH_TOKEN_TTL_SECONDS:2592000}
+    refresh-cookie-secure: ${MEALMINUTES_REFRESH_COOKIE_SECURE:true}
+    allowed-origin: ${MEALMINUTES_ALLOWED_ORIGIN:http://localhost:5173}
 
 server:
   port: ${SERVER_PORT:8080}
