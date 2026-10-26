@@ -180,7 +180,7 @@ public class CustomerAddressService {
         }
     }
 
-    private record AddressRecord(String addressId, boolean isDefault) { }
+    record AddressRecord(String addressId, boolean isDefault) { }
 
     public record AddressCommand(String label, String recipientName, String recipientPhone, String addressLine1,
                                  String addressLine2, String city, String region, String postalCode,
