@@ -24,7 +24,7 @@ Updated: 2026-10-26. This is a living tracker; statuses must reflect verified re
 - [x] Normalize hostnames and resolve exact verified registry mappings for active/provisioned tenants.
 - [x] Bind a request-scoped tenant descriptor and clear it on success and exception paths.
 - [x] Add unit tests for malformed hosts, tenant lifecycle transitions, resolver rejection, and context cleanup.
-- [ ] Implement domain ownership proof/verification workflow.
+- [x] Implement expiring DNS TXT domain ownership proof/verification workflow.
 - [x] Implement an isolated bounded LRU tenant datasource pool registry with validated database names and secret-reference credentials.\n- [ ] Wire tenant pools into a tenant-aware EntityManagerFactory/router and prove isolation with integration tests.
 - [x] Add tenant membership authorization primitives independent of hostname.
 - [x] Add fail-closed stateless Spring Security baseline; only health/info are allow-listed while authentication is not configured.
