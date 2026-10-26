@@ -4,7 +4,7 @@ import com.mealminutes.business.menu.api.MenuCategoryResponse;
 import com.mealminutes.platform.tenant.domain.TenantContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.data.redis.connection.RedisConnectionFailureException;
+import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import tools.jackson.databind.ObjectMapper;
