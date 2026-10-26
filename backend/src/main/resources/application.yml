@@ -33,6 +33,14 @@ mealminutes:
     min-idle-per-tenant: ${TENANT_DB_MIN_IDLE:0}
     connection-timeout-ms: ${TENANT_DB_CONNECTION_TIMEOUT_MS:3000}
     idle-timeout-ms: ${TENANT_DB_IDLE_TIMEOUT_MS:60000}
+  tenant-provisioning:
+    enabled: ${MEALMINUTES_TENANT_PROVISIONING_ENABLED:false}
+    admin-jdbc-url: ${TENANT_DB_ADMIN_JDBC_URL:}
+    admin-username: ${TENANT_DB_ADMIN_USERNAME:}
+    admin-password: ${TENANT_DB_ADMIN_PASSWORD:}
+    local-secret-file: ${MEALMINUTES_LOCAL_SECRET_FILE:./.local-secrets/tenant-db-secrets.properties}
+    local-secret-key: ${MEALMINUTES_LOCAL_SECRET_KEY:}
+    migration-location: classpath:db/tenant-migration
   security:
     enabled: ${MEALMINUTES_SECURITY_ENABLED:false}
     private-key-location: ${MEALMINUTES_RSA_PRIVATE_KEY_LOCATION:}

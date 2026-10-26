@@ -19,3 +19,6 @@ Thumbs.db
 coverage/
 .nyc_output/
 .expo/
+
+# Local encrypted tenant credential store
+.local-secrets/
