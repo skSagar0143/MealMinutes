@@ -55,7 +55,7 @@ public class TenantMenuQueryService {
         return profiles.stream().findFirst();
     }
 
-    @Transactional(readOnly = true)
+    
     public List<MenuCategoryResponse> listCategories() {
         return jdbc().query("""
                 SELECT category_id, name, slug, description, sort_order
@@ -67,7 +67,7 @@ public class TenantMenuQueryService {
                 rs.getString("description"), rs.getInt("sort_order")));
     }
 
-    @Transactional(readOnly = true)
+    
     public List<MenuItemResponse> listItems(String categorySlug, String search, int page, int size) {
         if (page < 0) throw new IllegalArgumentException("page must be zero or greater");
         if (size < 1 || size > MAX_PAGE_SIZE) throw new IllegalArgumentException("size must be between 1 and 100");
