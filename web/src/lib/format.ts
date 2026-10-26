@@ -1,0 +1,2 @@
+export function formatMoney(amount:number,currency="INR"):string { if(!Number.isFinite(amount)) return "—"; return new Intl.NumberFormat("en-IN",{style:"currency",currency,maximumFractionDigits:2}).format(amount); }
+export function normalizeSearch(value:string):string { return value.trim().replace(/\s+/g," ").slice(0,100); }

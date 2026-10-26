@@ -1,0 +1,28 @@
+name: Web CI
+on:
+  push:
+    branches: [main]
+    paths: ['web/**', '.github/workflows/web-ci.yml']
+  pull_request:
+    branches: [main]
+    paths: ['web/**', '.github/workflows/web-ci.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        working-directory: web
+        run: npm install --no-audit --no-fund
+      - name: Unit tests
+        working-directory: web
+        run: npm test
+      - name: Type-check and production build
+        working-directory: web
+        run: npm run build
