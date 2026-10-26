@@ -4,8 +4,11 @@ type Category={id:string;name:string;slug:string;description?:string|null;sortOr
 type Item={id:string;categoryId:string;name:string;slug:string;description?:string|null;price:number;currency:string;imageUrl?:string|null;vegetarian:boolean;vegan:boolean;allergens?:string|null;available:boolean;displayOrder:number};
 type Restaurant={id:string;name:string;description?:string|null;logoUrl?:string|null;supportEmail?:string|null;supportPhone?:string|null;currency:string;timezone:string};
 const api=(import.meta.env.VITE_API_BASE_URL as string|undefined)?.replace(/\/$/,"")??"";
-const host=window.location.hostname; const local=host==="localhost"||host==="127.0.0.1"||host.endsWith(".test");
-const storefront=window.location.pathname.startsWith("/storefront")||(!local&&host.includes("."));
+const host=window.location.hostname;
+const rootDomain=(import.meta.env.VITE_ROOT_DOMAIN as string|undefined)??"zestivo.com";
+const subdomain=host.endsWith("." + rootDomain)?host.slice(0,-rootDomain.length-1):"";
+const reservedHosts=new Set(["www","restaurant","admin","api"]);
+const storefront=window.location.pathname.startsWith("/storefront")||(subdomain.length>0&&!reservedHosts.has(subdomain.split(".")[0]));
 export default function App(){
  const [restaurant,setRestaurant]=useState<Restaurant|null>(null),[categories,setCategories]=useState<Category[]>([]),[items,setItems]=useState<Item[]>([]);
  const [input,setInput]=useState(new URLSearchParams(window.location.search).get("search")??""),[search,setSearch]=useState(normalizeSearch(new URLSearchParams(window.location.search).get("search")??"")),[category,setCategory]=useState("");
