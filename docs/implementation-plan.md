@@ -16,7 +16,7 @@ Updated: 2026-10-26. This is a living tracker; a feature is complete only when i
 - [x] Verified hostname/DNS TXT ownership proof and tenant lifecycle transitions.
 - [x] Restricted tenant database provisioning, encrypted local secret storage and per-tenant Flyway migration orchestration components.
 - [x] Bounded tenant datasource pool, tenant-aware JDBC adapter and separate tenant transaction manager when provisioning is enabled.
-- [x] Tenant schema migrations V1–V7, MySQL-backed migration integration test and migration checks for address/profile uniqueness.
+- [x] Tenant schema migrations V1–V8, MySQL-backed migration integration test and migration checks for address/profile uniqueness.
 - [x] Real MySQL tenant-routing integration test proving tenant A and tenant B resolve to different databases and cannot read each other's probe rows.
 - [ ] Prove full provisioning retries/recovery with deployment-like credentials and failure injection.
 - [ ] Add concurrent cross-tenant write tests, forged-host/header tests and datasource-eviction concurrency tests.
