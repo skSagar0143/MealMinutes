@@ -177,7 +177,9 @@ public class TenantMenuManagementService {
     private <T> T inTenantTransaction(Supplier<T> operation) {
         PlatformTransactionManager manager = transactionManagerProvider.get();
         if (manager == null) throw new TenantProvisionerUnavailableException();
-        return new TransactionTemplate(manager).execute(status -> operation.get());
+        T result = new TransactionTemplate(manager).execute(status -> operation.get());
+        cache.evictCurrentTenant();
+        return result;
     }
 
     private JdbcTemplate jdbc() {
