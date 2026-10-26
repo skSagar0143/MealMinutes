@@ -1,5 +1,7 @@
 package com.mealminutes.platform.tenant.service;
 
+import com.mealminutes.platform.tenant.persistence.TenantDatabaseCredentialsProvider;
+
 import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
