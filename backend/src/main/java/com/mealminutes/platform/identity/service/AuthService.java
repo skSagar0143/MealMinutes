@@ -54,7 +54,7 @@ public class AuthService {
 
     @Transactional
     public IssuedTokens login(String email, String password) {
-        if (email == null || password == null || password.isEmpty()) throw new BadCredentialsException("Invalid credentials");
+        if (email == null || email.isBlank() || password == null || password.isEmpty()) throw new BadCredentialsException("Invalid credentials");
         String normalized = email.trim().toLowerCase(Locale.ROOT);
         authenticationManager.authenticate(UsernamePasswordAuthenticationToken.unauthenticated(normalized, password));
         PlatformUserAccount user = users.findByEmail(normalized)

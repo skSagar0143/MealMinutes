@@ -26,9 +26,10 @@ Updated: 2026-10-26. This is a living tracker; statuses must reflect verified re
 - [x] Add unit tests for malformed hosts, tenant lifecycle transitions, resolver rejection, and context cleanup.
 - [ ] Implement domain ownership proof/verification workflow.
 - [x] Implement an isolated bounded LRU tenant datasource pool registry with validated database names and secret-reference credentials.\n- [ ] Wire tenant pools into a tenant-aware EntityManagerFactory/router and prove isolation with integration tests.
-- [ ] Implement tenant membership authorization independent of hostname.
-- [x] Add fail-closed stateless Spring Security baseline; only health/info are allow-listed while API authentication is pending.
-- [ ] Implement RS256 access tokens, refresh rotation/revocation, password hashing, login throttling, and permissions.
+- [x] Add tenant membership authorization primitives independent of hostname.
+- [x] Add fail-closed stateless Spring Security baseline; only health/info are allow-listed while authentication is not configured.
+- [x] Implement optional RS256 access tokens, BCrypt password hashing, opaque hashed refresh sessions with rotation/revocation, and HttpOnly refresh cookies.
+- [ ] Add distributed login throttling, password reset/email verification, signing-key rotation, and comprehensive authentication integration tests.
 - [ ] Add real cross-tenant, forged-host/header, and concurrent datasource-isolation integration tests.
 
 ## Phase 4 — Core business workflows
