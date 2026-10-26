@@ -46,13 +46,17 @@ public class RestaurantProfileService {
 
     @Transactional(transactionManager = "tenantTransactionManager", readOnly = true)
     public java.util.Optional<RestaurantProfileResponse> getProfile() {
-        return jdbc.query("""
+        RestaurantProfileResponse cached = cache.getProfile();
+        if (cached != null) return java.util.Optional.of(cached);
+        java.util.Optional<RestaurantProfileResponse> profile = jdbc.query("""
                 SELECT restaurant_id, restaurant_name, description, logo_url, support_email, support_phone, currency, timezone
                 FROM restaurant_profile WHERE is_active = TRUE LIMIT 1
                 """, (rs, row) -> new RestaurantProfileResponse(rs.getString("restaurant_id"),
                 rs.getString("restaurant_name"), rs.getString("description"), rs.getString("logo_url"),
                 rs.getString("support_email"), rs.getString("support_phone"), rs.getString("currency"),
                 rs.getString("timezone"))).stream().findFirst();
+        profile.ifPresent(cache::putProfile);
+        return profile;
     }
 
     @Transactional(transactionManager = "tenantTransactionManager")
