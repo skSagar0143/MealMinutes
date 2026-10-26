@@ -3,6 +3,7 @@ package com.mealminutes.platform.api;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
+import com.mealminutes.platform.tenant.service.TenantProvisionerUnavailableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.http.ProblemDetail;
@@ -38,6 +39,12 @@ public class ApiExceptionHandler {
     @ExceptionHandler(IllegalStateException.class)
     ProblemDetail handleConflict(IllegalStateException exception, HttpServletRequest request) {
         return problem(HttpStatus.CONFLICT, "Operation cannot be completed", exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(TenantProvisionerUnavailableException.class)
+    ProblemDetail handleProvisionerUnavailable(TenantProvisionerUnavailableException exception, HttpServletRequest request) {
+        return problem(HttpStatus.SERVICE_UNAVAILABLE, "Tenant provisioning unavailable",
+                "Tenant database provisioning is not configured for this deployment", request);
     }
 
     @ExceptionHandler(AuthenticationException.class)

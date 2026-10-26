@@ -6,16 +6,23 @@ import com.mealminutes.platform.tenant.domain.TenantLifecycleStatus;
 import com.mealminutes.platform.tenant.domain.TenantRegistryEntry;
 import com.mealminutes.platform.tenant.persistence.TenantDomainRepository;
 import com.mealminutes.platform.tenant.persistence.TenantRegistryRepository;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@ConditionalOnBean(TenantDatabaseProvisioner.class)
 public class TenantProvisioningService {
     private final TenantRegistryRepository tenantRepository;
     private final TenantDomainRepository domainRepository;
     private final TenantDatabaseProvisioner databaseProvisioner;
+
+    @Autowired
+    public TenantProvisioningService(TenantRegistryRepository tenantRepository,
+                                     TenantDomainRepository domainRepository,
+                                     ObjectProvider<TenantDatabaseProvisioner> provisioners) {
+        this(tenantRepository, domainRepository, provisioners.getIfAvailable());
+    }
 
     public TenantProvisioningService(TenantRegistryRepository tenantRepository,
                                      TenantDomainRepository domainRepository,
@@ -26,7 +33,7 @@ public class TenantProvisioningService {
     }
 
     @Transactional
-    public TenantRegistryEntry register(String slug, String hostname) {
+    public TenantRegistrationResult register(String slug, String hostname) {
         if (tenantRepository.existsBySlug(slug)) {
             throw new IllegalArgumentException("Tenant slug is already registered");
         }
@@ -39,8 +46,13 @@ public class TenantProvisioningService {
         tenant.transitionTo(TenantLifecycleStatus.PENDING_VERIFICATION);
         tenant = tenantRepository.saveAndFlush(tenant);
         TenantDomain domain = new TenantDomain(tenant, normalizedHostname);
+        String challenge = createVerificationChallenge();
+        domain.setVerificationChallenge(challenge, java.time.Instant.now().plus(java.time.Duration.ofHours(24)));
         domainRepository.saveAndFlush(domain);
-        return tenant;
+        return new TenantRegistrationResult(tenant.getTenantId(), tenant.getSlug(),
+                domain.getHostname(), tenant.getLifecycleStatus().name(),
+                "_mealminutes-verification." + domain.getHostname(),
+                "mealminutes-verification=" + challenge);
     }
 
     @Transactional
@@ -55,6 +67,7 @@ public class TenantProvisioningService {
      * A failed attempt remains visible and may be retried safely by the port.
      */
     public TenantRegistryEntry provision(String tenantId) {
+        if (databaseProvisioner == null) throw new TenantProvisionerUnavailableException();
         TenantRegistryEntry tenant = requireTenant(tenantId);
         if (tenant.getLifecycleStatus() != TenantLifecycleStatus.APPROVED
                 && tenant.getLifecycleStatus() != TenantLifecycleStatus.FAILED) {
@@ -102,6 +115,16 @@ public class TenantProvisioningService {
         tenant.transitionTo(TenantLifecycleStatus.ACTIVE);
         return tenantRepository.saveAndFlush(tenant);
     }
+
+    private static String createVerificationChallenge() {
+        byte[] bytes = new byte[32];
+        new java.security.SecureRandom().nextBytes(bytes);
+        return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    public record TenantRegistrationResult(String tenantId, String slug, String hostname,
+                                           String lifecycleStatus, String dnsTxtRecordName,
+                                           String dnsTxtRecordValue) { }
 
     private TenantRegistryEntry requireTenant(String tenantId) {
         if (tenantId == null || tenantId.isBlank()) {

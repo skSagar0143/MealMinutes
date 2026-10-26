@@ -34,10 +34,10 @@ public class SecurityConfiguration {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         if (decoders.getIfAvailable() == null) {
             http.authorizeHttpRequests(auth -> auth.requestMatchers(
-                    "/actuator/health", "/actuator/health/**", "/actuator/info").permitAll().anyRequest().denyAll());
+                    "/actuator/health", "/actuator/health/**", "/actuator/info", "/api/v1/tenant-domains/verify").permitAll().anyRequest().denyAll());
         } else {
             http.authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
+                    .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info", "/api/v1/tenant-domains/verify").permitAll()
                     .requestMatchers("/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/logout").permitAll()
                     .requestMatchers("/api/v1/platform/**").hasRole("PLATFORM_ADMIN")
                     .anyRequest().authenticated())
