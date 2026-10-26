@@ -24,6 +24,15 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        "[enable.idempotence]": true
+        "[max.in.flight.requests.per.connection]": 5
 
 mealminutes:
   tenant-datasource:
@@ -64,6 +73,14 @@ mealminutes:
     enabled: ${MEALMINUTES_ORDER_PRICING_ENABLED:false}
     tax-rate: ${MEALMINUTES_ORDER_TAX_RATE:0.00}
     delivery-fee: ${MEALMINUTES_ORDER_DELIVERY_FEE:0.00}
+  outbox:
+    enabled: ${MEALMINUTES_OUTBOX_ENABLED:false}
+    topic: ${MEALMINUTES_OUTBOX_TOPIC:mealminutes.events}
+    poll-interval-ms: ${MEALMINUTES_OUTBOX_POLL_INTERVAL_MS:1000}
+    batch-size: ${MEALMINUTES_OUTBOX_BATCH_SIZE:10}
+    max-attempts: ${MEALMINUTES_OUTBOX_MAX_ATTEMPTS:12}
+    base-backoff-seconds: ${MEALMINUTES_OUTBOX_BASE_BACKOFF_SECONDS:2}
+    send-timeout-ms: ${MEALMINUTES_OUTBOX_SEND_TIMEOUT_MS:5000}
 
 server:
   port: ${SERVER_PORT:8080}
