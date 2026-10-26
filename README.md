@@ -28,9 +28,9 @@ MealMinutes is a multi-tenant restaurant ordering and operations platform. **Zes
 - Tenant-aware Redis storefront caching with tenant/version-scoped keys, TTLs, after-commit version invalidation and safe database fallback on cache errors.
 - Docker Compose definitions for MySQL, Redis and Kafka.
 
-## Latest verified backend CI
+## Verified backend CI evidence
 
-[Backend CI run 40380957054](https://github.com/skSagar0143/MealMinutes/actions/runs/40380957054) completed successfully with **195 tests, zero failures/errors**, a generated JaCoCo report and the configured coverage gates. The gates currently require at least 75% instruction coverage and 60% branch coverage. This is not 100% coverage and does not prove production readiness.
+The pre-Redis main baseline [Backend CI run 40380957054](https://github.com/skSagar0143/MealMinutes/actions/runs/40380957054) completed successfully with **195 tests, zero failures/errors** and a generated JaCoCo report. After the Redis cache change, feature-branch CI [run 40381216478](https://github.com/skSagar0143/MealMinutes/actions/runs/40381216478) passed **204 tests, zero failures/errors**. Check [GitHub Actions](https://github.com/skSagar0143/MealMinutes/actions) for the post-merge main-branch run. The configured gates require at least 75% instruction coverage and 60% branch coverage. This is not 100% coverage and does not prove production readiness.
 
 The latest verified run validates the repository state at that commit. Each subsequent code change must be revalidated by its own CI run.
 
