@@ -2,6 +2,7 @@ package com.mealminutes.business.menu.service;
 
 import com.mealminutes.business.menu.api.MenuCategoryResponse;
 import com.mealminutes.business.menu.api.MenuItemResponse;
+import com.mealminutes.business.menu.api.RestaurantProfileResponse;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -24,6 +25,22 @@ public class TenantMenuQueryService {
 
     public TenantMenuQueryService(JdbcTemplate jdbc) {
         this.jdbc = Objects.requireNonNull(jdbc, "jdbc");
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.Optional<RestaurantProfileResponse> getRestaurantProfile() {
+        List<RestaurantProfileResponse> profiles = jdbc.query("""
+                SELECT restaurant_id, restaurant_name, description, logo_url,
+                       support_email, support_phone, currency, timezone
+                FROM restaurant_profile
+                WHERE is_active = TRUE
+                LIMIT 1
+                """, (rs, row) -> new RestaurantProfileResponse(
+                rs.getString("restaurant_id"), rs.getString("restaurant_name"),
+                rs.getString("description"), rs.getString("logo_url"),
+                rs.getString("support_email"), rs.getString("support_phone"),
+                rs.getString("currency"), rs.getString("timezone")));
+        return profiles.stream().findFirst();
     }
 
     @Transactional(readOnly = true)

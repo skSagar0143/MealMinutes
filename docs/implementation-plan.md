@@ -7,7 +7,7 @@ Updated: 2026-10-26. This is a living tracker; statuses must reflect verified re
 - [x] Initialize repository documentation and Java 21 / Spring Boot build.
 - [x] Add externalized configuration and Actuator health probes.
 - [x] Add application context smoke test and JaCoCo HTML/XML report wiring with instruction/branch checks.
-- [x] Get the backend CI build green with Flyway migration, 32 tests, JaCoCo report upload, and configured coverage gates.
+- [x] Get the backend CI build green with MySQL-backed Flyway migrations, 93 tests, JaCoCo HTML/XML report upload, and 75% instruction / 60% branch coverage gates.
 - [x] Add Docker Compose configuration for local MySQL and Redis.
 - [ ] Verify clean local startup and Maven tests on Java 21 outside GitHub Actions.
 
@@ -34,7 +34,7 @@ Updated: 2026-10-26. This is a living tracker; statuses must reflect verified re
 
 ## Phase 4 — Core business workflows
 
-- [ ] Restaurant/branch and menu management.
+- [ ] Restaurant/branch management and menu write/admin workflows.\n- [x] Add tenant-database-backed public restaurant profile and menu read endpoints with input validation and bounded pagination.
 - [ ] Customer addresses, cart, checkout and idempotent order creation.
 - [ ] Order state machine, snapshots, inventory concurrency and audit history.
 - [ ] Payment adapter, verified webhook replay protection, refunds and reconciliation.

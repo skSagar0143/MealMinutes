@@ -2,6 +2,8 @@ package com.mealminutes.business.menu.api;
 
 import com.mealminutes.business.menu.service.TenantMenuQueryService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -17,6 +19,12 @@ public class StorefrontMenuController {
 
     public StorefrontMenuController(TenantMenuQueryService menu) {
         this.menu = menu;
+    }
+
+    @GetMapping("/restaurant")
+    public RestaurantProfileResponse restaurant() {
+        return menu.getRestaurantProfile().orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "Restaurant profile not found"));
     }
 
     @GetMapping("/categories")

@@ -2,6 +2,7 @@ package com.mealminutes.business.menu;
 
 import com.mealminutes.business.menu.api.MenuCategoryResponse;
 import com.mealminutes.business.menu.api.MenuItemResponse;
+import com.mealminutes.business.menu.api.RestaurantProfileResponse;
 import com.mealminutes.business.menu.service.TenantMenuQueryService;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -19,6 +20,20 @@ import static org.mockito.Mockito.*;
 class TenantMenuQueryServiceTests {
     private final JdbcTemplate jdbc = mock(JdbcTemplate.class);
     private final TenantMenuQueryService service = new TenantMenuQueryService(jdbc);
+
+    @Test
+    void returnsActiveRestaurantProfileWhenPresent() {
+        var expected = new RestaurantProfileResponse("r1", "Test Kitchen", null, null,
+                "hello@example.com", null, "INR", "Asia/Kolkata");
+        when(jdbc.query(contains("FROM restaurant_profile"), any(RowMapper.class))).thenReturn(List.of(expected));
+        assertThat(service.getRestaurantProfile()).contains(expected);
+    }
+
+    @Test
+    void returnsEmptyWhenNoActiveRestaurantProfileExists() {
+        when(jdbc.query(contains("FROM restaurant_profile"), any(RowMapper.class))).thenReturn(List.of());
+        assertThat(service.getRestaurantProfile()).isEmpty();
+    }
 
     @Test
     void listsActiveCategoriesInRepositoryOrder() {
