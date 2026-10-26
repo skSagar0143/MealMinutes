@@ -89,6 +89,44 @@ class TenantProvisioningServiceTests {
         verify(tenants, times(2)).saveAndFlush(any(TenantRegistryEntry.class));
     }
 
+    @Test
+    void registrationCreatesExpiringDnsChallengeAndPersistsTenantAndDomain() {
+        TenantRegistryRepository tenants = mock(TenantRegistryRepository.class);
+        TenantDomainRepository domains = mock(TenantDomainRepository.class);
+        when(tenants.existsBySlug("abc-food")).thenReturn(false);
+        when(domains.existsByHostname("shop.example.com")).thenReturn(false);
+        when(tenants.saveAndFlush(any(TenantRegistryEntry.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(domains.saveAndFlush(any(TenantDomain.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        TenantProvisioningService service = new TenantProvisioningService(tenants, domains,
+                slug -> new TenantDatabaseProvisioner.ProvisionedDatabase("tenant_abc_food", "secret://abc", 1));
+
+        var result = service.register("abc-food", " SHOP.EXAMPLE.COM. ");
+
+        assertThat(result.hostname()).isEqualTo("shop.example.com");
+        assertThat(result.dnsTxtRecordName()).isEqualTo("_mealminutes-verification.shop.example.com");
+        assertThat(result.dnsTxtRecordValue()).startsWith("mealminutes-verification=");
+        var captor = org.mockito.ArgumentCaptor.forClass(TenantDomain.class);
+        verify(domains).saveAndFlush(captor.capture());
+        String challenge = result.dnsTxtRecordValue().substring("mealminutes-verification=".length());
+        assertThat(captor.getValue().matchesVerificationChallenge(challenge, java.time.Instant.now())).isTrue();
+        assertThat(captor.getValue().getVerificationExpiresAt()).isAfter(java.time.Instant.now());
+    }
+
+    @Test
+    void registrationRejectsDuplicateSlugAndHostname() {
+        TenantRegistryRepository tenants = mock(TenantRegistryRepository.class);
+        TenantDomainRepository domains = mock(TenantDomainRepository.class);
+        TenantProvisioningService service = new TenantProvisioningService(tenants, domains,
+                slug -> new TenantDatabaseProvisioner.ProvisionedDatabase("tenant_abc_food", "secret://abc", 1));
+        when(tenants.existsBySlug("abc-food")).thenReturn(true);
+        assertThatThrownBy(() -> service.register("abc-food", "shop.example.com"))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("slug");
+        when(tenants.existsBySlug("abc-food")).thenReturn(false);
+        when(domains.existsByHostname("shop.example.com")).thenReturn(true);
+        assertThatThrownBy(() -> service.register("abc-food", "shop.example.com"))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Hostname");
+    }
+
     private TenantRegistryEntry approvedTenant() {
         TenantRegistryEntry tenant = new TenantRegistryEntry("abc-food");
         tenant.transitionTo(TenantLifecycleStatus.PENDING_VERIFICATION);
