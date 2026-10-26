@@ -29,12 +29,19 @@ import java.util.UUID;
 public class RestaurantProfileService {
     private final JdbcTemplate jdbc;
     private final ObjectMapper objectMapper;
+    private final com.mealminutes.business.menu.service.TenantMenuCache cache;
 
     @Autowired
     public RestaurantProfileService(@Qualifier("tenantBusinessJdbcTemplate") JdbcTemplate jdbc,
-                                    ObjectMapper objectMapper) {
+                                    ObjectMapper objectMapper,
+                                    com.mealminutes.business.menu.service.TenantMenuCache cache) {
         this.jdbc = Objects.requireNonNull(jdbc, "jdbc");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
+        this.cache = Objects.requireNonNull(cache, "cache");
+    }
+
+    public RestaurantProfileService(JdbcTemplate jdbc, ObjectMapper objectMapper) {
+        this(jdbc, objectMapper, new com.mealminutes.business.menu.service.TenantMenuCache());
     }
 
     @Transactional(transactionManager = "tenantTransactionManager", readOnly = true)
@@ -102,6 +109,7 @@ public class RestaurantProfileService {
         }
 
         recordProfileChange(actorUserId, profileId, created, name, currency, timezone);
+        cache.evictCurrentTenantAfterCommit();
         return new RestaurantProfileResponse(profileId, name, description, logoUrl, supportEmail,
                 supportPhone, currency, timezone);
     }
