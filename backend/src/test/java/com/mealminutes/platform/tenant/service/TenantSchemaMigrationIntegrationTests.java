@@ -73,6 +73,14 @@ class TenantSchemaMigrationIntegrationTests {
                 assertThat(columns.next()).isTrue();
             }
             try (var connection = DriverManager.getConnection(tenantUrl, username, password);
+                 ResultSet columns = connection.getMetaData().getColumns(databaseName, null, "outbox_event", "next_attempt_at")) {
+                assertThat(columns.next()).isTrue();
+            }
+            try (var connection = DriverManager.getConnection(tenantUrl, username, password);
+                 ResultSet columns = connection.getMetaData().getColumns(databaseName, null, "outbox_event", "dead_lettered_at")) {
+                assertThat(columns.next()).isTrue();
+            }
+            try (var connection = DriverManager.getConnection(tenantUrl, username, password);
                  ResultSet columns = connection.getMetaData().getColumns(databaseName, null, "restaurant_profile", "active_profile_key")) {
                 assertThat(columns.next()).isTrue();
             }
