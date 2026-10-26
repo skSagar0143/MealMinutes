@@ -3,7 +3,10 @@ package com.mealminutes.business.menu.service;
 import com.mealminutes.business.menu.api.MenuCategoryResponse;
 import com.mealminutes.business.menu.api.MenuItemResponse;
 import com.mealminutes.business.menu.api.RestaurantProfileResponse;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import com.mealminutes.platform.tenant.service.TenantProvisionerUnavailableException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
@@ -11,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
  * Read-only storefront queries. The injected JdbcTemplate must be backed by
@@ -18,13 +22,23 @@ import java.util.Objects;
  * before this service is invoked.
  */
 @Service
-@ConditionalOnBean(name = "tenantBusinessJdbcTemplate")
 public class TenantMenuQueryService {
     private static final int MAX_PAGE_SIZE = 100;
-    private final JdbcTemplate jdbc;
+    private final Supplier<JdbcTemplate> jdbcProvider;
+
+    @Autowired
+    public TenantMenuQueryService(@Qualifier("tenantBusinessJdbcTemplate") ObjectProvider<JdbcTemplate> jdbcProvider) {
+        this.jdbcProvider = jdbcProvider::getIfAvailable;
+    }
 
     public TenantMenuQueryService(JdbcTemplate jdbc) {
-        this.jdbc = Objects.requireNonNull(jdbc, "jdbc");
+        this.jdbcProvider = () -> Objects.requireNonNull(jdbc, "jdbc");
+    }
+
+    private JdbcTemplate jdbc() {
+        JdbcTemplate template = jdbcProvider.get();
+        if (template == null) throw new TenantProvisionerUnavailableException();
+        return template;
     }
 
     @Transactional(readOnly = true)
