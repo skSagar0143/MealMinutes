@@ -2,7 +2,7 @@
 
 ## Current implementation boundary
 
-The backend currently implements a **feature-flagged tenant-aware transactional outbox dispatcher**. It reads committed event rows from each eligible tenant database and publishes them to the configured Kafka topic. A consumer-side idempotency ledger, business-event consumers, schema compatibility enforcement, dead-letter re-drive UI and operational dashboards are still pending. Do not treat producer publication as end-to-end event processing.
+The backend implements a feature-flagged tenant-aware transactional outbox dispatcher and a feature-flagged Kafka inbox receiver. The receiver validates required metadata, resolves the tenant from the platform registry, routes to that tenant's database and stores each event in an `inbox_event` table using an idempotent insert. This is durable receipt, not yet execution of business side effects. Consumer-side business processing, explicit schema compatibility policy, dead-letter re-drive UI and operational dashboards remain pending.
 
 ## Local broker
 
@@ -54,9 +54,22 @@ The JSON payload is written in the same tenant database transaction as the busin
 
 Do not put passwords, private keys, raw payment credentials or unnecessary personal data into event payloads.
 
+## Enable the inbox receiver
+
+The receiver is disabled by default and requires tenant provisioning, tenant datasource/secret configuration, and the V10 tenant migration. In a configured local environment:
+
+```powershell
+$env:MEALMINUTES_TENANT_PROVISIONING_ENABLED = "true"
+$env:MEALMINUTES_CONSUMER_ENABLED = "true"
+$env:MEALMINUTES_CONSUMER_TOPIC = "mealminutes.events"
+$env:MEALMINUTES_CONSUMER_GROUP_ID = "mealminutes-inbox"
+```
+
+The listener commits the durable inbox write before returning, so the Kafka container can commit the offset afterwards. If the process crashes after the database commit but before the offset commit, Kafka may redeliver the record; `INSERT IGNORE` and the tenant-local primary key make that receipt idempotent. Invalid records or unavailable tenant databases throw rather than being acknowledged as successfully received.
+
 ## Delivery semantics
 
-Delivery is **at least once**, not exactly once end to end. If Kafka accepts a record but the application fails before committing `published_at`, the event can be published again. Future consumers must deduplicate by `event_id` in a durable store and apply business side effects idempotently. Consumer offsets alone do not make an external side effect exactly once.
+Delivery is **at least once**, not exactly once end to end. If Kafka accepts a record but the application fails before committing `published_at`, the event can be published again. The inbox receiver deduplicates durable receipt by `event_id` within the resolved tenant database. A future business processor must separately claim inbox rows, record processing attempts and make each side effect idempotent before marking an event processed. Consumer offsets alone do not make an external side effect exactly once.
 
 The dispatcher records attempts and bounded error messages. Failures use exponential backoff; after the configured attempt limit the outbox row is marked dead-lettered in MySQL. This is database dead-letter state, not yet a separate Kafka dead-letter topic. Re-drive tooling is not implemented; use a reviewed, audited recovery process until that tooling exists.
 
@@ -66,9 +79,11 @@ The dispatcher records attempts and bounded error messages. Failures use exponen
 - [x] Dispatcher adds event metadata headers and sends to the configured topic.
 - [x] Outbox row is marked published only after broker acknowledgement.
 - [x] Send failures schedule bounded exponential retry and eventually enter database dead-letter state.
-- [ ] Consumer validates required headers and supported schema versions.
-- [ ] Consumer uses a tenant-scoped processed-event ledger for deduplication.
-- [ ] Consumer crash/rebalance/replay scenarios are tested against Kafka.
+- [x] Inbox receiver validates required metadata, positive schema version, active tenant and V10 schema readiness.
+- [x] Inbox receiver uses a tenant-local primary key and `INSERT IGNORE` to tolerate duplicate delivery.
+- [ ] Add an explicit supported-schema compatibility policy and dead-letter routing for invalid events.
+- [ ] Implement inbox business processing with durable attempts, idempotent side effects and processed-event ledger.
+- [ ] Consumer crash/rebalance/replay scenarios are tested against a real Kafka broker.
 - [ ] Dead-letter re-drive is audited and does not repeat irreversible side effects.
 - [ ] Consumer lag, retry volume and dead-letter counts have operational metrics/alerts.
 

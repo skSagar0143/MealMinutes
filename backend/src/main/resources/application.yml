@@ -90,6 +90,10 @@ mealminutes:
     max-attempts: ${MEALMINUTES_OUTBOX_MAX_ATTEMPTS:12}
     base-backoff-seconds: ${MEALMINUTES_OUTBOX_BASE_BACKOFF_SECONDS:2}
     send-timeout-ms: ${MEALMINUTES_OUTBOX_SEND_TIMEOUT_MS:5000}
+  consumer:
+    enabled: ${MEALMINUTES_CONSUMER_ENABLED:false}
+    topic: ${MEALMINUTES_CONSUMER_TOPIC:mealminutes.events}
+    group-id: ${MEALMINUTES_CONSUMER_GROUP_ID:mealminutes-inbox}
 
 server:
   port: ${SERVER_PORT:8080}
