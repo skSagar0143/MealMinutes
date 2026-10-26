@@ -112,6 +112,18 @@ Payment endpoints require `MEALMINUTES_PAYMENT_ENABLED=true`, tenant provisionin
 
 Payment intent creation, signed webhook processing, event deduplication, payment/order state updates and outbox writes are implemented and covered by tests. Refund execution, provider reconciliation jobs, manual recovery tooling and live provider verification are not complete.
 
+## Transactional outbox and Kafka
+
+The dispatcher is disabled by default. For local development, start the Kafka service in `compose.yaml`, then configure `KAFKA_BOOTSTRAP_SERVERS=localhost:9092`, `MEALMINUTES_TENANT_PROVISIONING_ENABLED=true`, and `MEALMINUTES_OUTBOX_ENABLED=true` with valid tenant-database admin credentials and tenant secrets.
+
+- Events are polled from each ACTIVE and successfully provisioned tenant database.
+- Rows are claimed with `FOR UPDATE SKIP LOCKED`; event payloads are published to the configured `mealminutes.events` topic.
+- Kafka messages carry `event_id`, `tenant_id`, aggregate, event type, schema version and correlation ID headers.
+- The dispatcher marks an outbox row published only after Kafka acknowledges the send.
+- Failures receive exponential backoff; after the configured attempt limit the row is marked with a database dead-letter timestamp and last error.
+
+Delivery is **at least once**, not exactly once end to end: a process can crash after Kafka accepts a record but before the database commit. Consumers must deduplicate on the `event_id` header using the tenant's `processed_event` table or an equivalent idempotency store. A dead-letter re-drive UI and a separate Kafka dead-letter topic are still pending.
+
 ## Remaining release gaps
 
 - Inventory reservation and stock consistency.
