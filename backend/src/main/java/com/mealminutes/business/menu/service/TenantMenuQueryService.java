@@ -24,14 +24,18 @@ import java.util.function.Supplier;
 public class TenantMenuQueryService {
     private static final int MAX_PAGE_SIZE = 100;
     private final Supplier<JdbcTemplate> jdbcProvider;
+    private final TenantMenuCache cache;
 
     @Autowired
-    public TenantMenuQueryService(@Qualifier("tenantBusinessJdbcTemplate") ObjectProvider<JdbcTemplate> jdbcProvider) {
+    public TenantMenuQueryService(@Qualifier("tenantBusinessJdbcTemplate") ObjectProvider<JdbcTemplate> jdbcProvider,
+                                  TenantMenuCache cache) {
         this.jdbcProvider = jdbcProvider::getIfAvailable;
+        this.cache = Objects.requireNonNull(cache, "cache");
     }
 
     public TenantMenuQueryService(JdbcTemplate jdbc) {
         this.jdbcProvider = () -> Objects.requireNonNull(jdbc, "jdbc");
+        this.cache = new TenantMenuCache();
     }
 
     private JdbcTemplate jdbc() {
@@ -41,6 +45,8 @@ public class TenantMenuQueryService {
     }
 
     public java.util.Optional<RestaurantProfileResponse> getRestaurantProfile() {
+        RestaurantProfileResponse cached = cache.getProfile();
+        if (cached != null) return java.util.Optional.of(cached);
         List<RestaurantProfileResponse> profiles = jdbc().query("""
                 SELECT restaurant_id, restaurant_name, description, logo_url,
                        support_email, support_phone, currency, timezone
@@ -52,12 +58,16 @@ public class TenantMenuQueryService {
                 rs.getString("description"), rs.getString("logo_url"),
                 rs.getString("support_email"), rs.getString("support_phone"),
                 rs.getString("currency"), rs.getString("timezone")));
-        return profiles.stream().findFirst();
+        java.util.Optional<RestaurantProfileResponse> profile = profiles.stream().findFirst();
+        profile.ifPresent(cache::putProfile);
+        return profile;
     }
 
     
     public List<MenuCategoryResponse> listCategories() {
-        return jdbc().query("""
+        List<MenuCategoryResponse> cached = cache.getCategories();
+        if (cached != null) return cached;
+        List<MenuCategoryResponse> categories = jdbc().query("""
                 SELECT category_id, name, slug, description, sort_order
                 FROM menu_category
                 WHERE is_active = TRUE
@@ -65,6 +75,8 @@ public class TenantMenuQueryService {
                 """, (rs, row) -> new MenuCategoryResponse(
                 rs.getString("category_id"), rs.getString("name"), rs.getString("slug"),
                 rs.getString("description"), rs.getInt("sort_order")));
+        cache.putCategories(categories);
+        return categories;
     }
 
     
@@ -85,6 +97,8 @@ public class TenantMenuQueryService {
         } catch (ArithmeticException ex) {
             throw new IllegalArgumentException("page is too large", ex);
         }
+        List<MenuItemResponse> cached = cache.getItems(normalizedCategory, normalizedSearch, page, size);
+        if (cached != null) return cached;
         String sql = """
                 SELECT i.item_id, i.category_id, i.name, i.slug, i.description, i.price,
                        i.currency, i.image_url, i.vegetarian, i.vegan, i.allergens,
@@ -103,7 +117,9 @@ public class TenantMenuQueryService {
                 rs.getString("currency"), rs.getString("image_url"), rs.getBoolean("vegetarian"),
                 rs.getBoolean("vegan"), rs.getString("allergens"), rs.getBoolean("is_available"),
                 rs.getInt("display_order"));
-        return jdbc().query(sql, mapper, normalizedCategory, normalizedCategory,
+        List<MenuItemResponse> items = jdbc().query(sql, mapper, normalizedCategory, normalizedCategory,
                 normalizedSearch, normalizedSearch, normalizedSearch, size, offset);
+        cache.putItems(normalizedCategory, normalizedSearch, page, size, items);
+        return items;
     }
 }
