@@ -94,6 +94,9 @@ mealminutes:
     enabled: ${MEALMINUTES_CONSUMER_ENABLED:false}
     topic: ${MEALMINUTES_CONSUMER_TOPIC:mealminutes.events}
     group-id: ${MEALMINUTES_CONSUMER_GROUP_ID:mealminutes-inbox}
+    retry-interval-ms: ${MEALMINUTES_CONSUMER_RETRY_INTERVAL_MS:1000}
+    retry-attempts: ${MEALMINUTES_CONSUMER_RETRY_ATTEMPTS:3}
+    dead-letter-topic-suffix: ${MEALMINUTES_CONSUMER_DLT_SUFFIX:.DLT}
 
 server:
   port: ${SERVER_PORT:8080}
