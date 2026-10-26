@@ -7,6 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -22,6 +23,16 @@ class SecurityConfigurationTests {
     @Test
     void unknownApiRequestsAreDeniedUntilAuthenticationIsImplemented() throws Exception {
         mockMvc.perform(get("/api/v1/private-resource")).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void corsPreflightAllowsOnlyConfiguredFrontendOrigin() throws Exception {
+        mockMvc.perform(options("/api/v1/auth/login")
+                        .header("Origin", "http://localhost:5173")
+                        .header("Access-Control-Request-Method", "POST"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                        .header().string("Access-Control-Allow-Origin", "http://localhost:5173"));
     }
 
     @Test

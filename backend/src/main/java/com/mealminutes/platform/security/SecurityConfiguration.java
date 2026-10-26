@@ -1,6 +1,11 @@
 package com.mealminutes.platform.security;
 
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.security.config.Customizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -17,6 +22,21 @@ public class SecurityConfiguration {
     @Bean PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(12); }
 
     @Bean
+    CorsConfigurationSource corsConfigurationSource(
+            @Value("${mealminutes.security.allowed-origin:http://localhost:5173}") String allowedOrigin) {
+        CorsConfiguration cors = new CorsConfiguration();
+        cors.setAllowedOrigins(java.util.List.of(allowedOrigin));
+        cors.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        cors.setAllowedHeaders(java.util.List.of("Authorization", "Content-Type", "X-Correlation-ID", "Idempotency-Key"));
+        cors.setExposedHeaders(java.util.List.of("X-Correlation-ID"));
+        cors.setAllowCredentials(true);
+        cors.setMaxAge(3600L);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", cors);
+        return source;
+    }
+
+    @Bean
     JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter authorities = new JwtGrantedAuthoritiesConverter();
         authorities.setAuthoritiesClaimName("roles");
@@ -29,7 +49,7 @@ public class SecurityConfiguration {
     @Bean
     SecurityFilterChain applicationSecurity(HttpSecurity http, ObjectProvider<JwtDecoder> decoders,
                                             JwtAuthenticationConverter converter) throws Exception {
-        http.csrf(csrf -> csrf.disable()).formLogin(form -> form.disable()).httpBasic(basic -> basic.disable())
+        http.cors(Customizer.withDefaults()).csrf(csrf -> csrf.disable()).formLogin(form -> form.disable()).httpBasic(basic -> basic.disable())
                 .logout(logout -> logout.disable()).requestCache(cache -> cache.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         if (decoders.getIfAvailable() == null) {

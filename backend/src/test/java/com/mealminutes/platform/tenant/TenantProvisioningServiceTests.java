@@ -90,6 +90,22 @@ class TenantProvisioningServiceTests {
     }
 
     @Test
+    void approvalRequiresDomainOwnershipProof() {
+        TenantRegistryRepository tenants = mock(TenantRegistryRepository.class);
+        TenantDomainRepository domains = mock(TenantDomainRepository.class);
+        TenantRegistryEntry tenant = new TenantRegistryEntry("abc-food");
+        tenant.transitionTo(TenantLifecycleStatus.PENDING_VERIFICATION);
+        when(tenants.findById(anyString())).thenReturn(Optional.of(tenant));
+        when(domains.findFirstByTenant_TenantIdAndVerificationStatus(anyString(), eq(DomainVerificationStatus.VERIFIED)))
+                .thenReturn(Optional.empty());
+        TenantProvisioningService service = new TenantProvisioningService(tenants, domains,
+                slug -> new TenantDatabaseProvisioner.ProvisionedDatabase("tenant_abc_food", "secret://abc", 1));
+        assertThatThrownBy(() -> service.approve("tenant-id"))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("verified domain");
+        verify(tenants, never()).saveAndFlush(any());
+    }
+
+    @Test
     void registrationCreatesExpiringDnsChallengeAndPersistsTenantAndDomain() {
         TenantRegistryRepository tenants = mock(TenantRegistryRepository.class);
         TenantDomainRepository domains = mock(TenantDomainRepository.class);

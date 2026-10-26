@@ -65,6 +65,12 @@ public class TenantProvisioningService {
     @Transactional
     public TenantRegistryEntry approve(String tenantId) {
         TenantRegistryEntry tenant = requireTenant(tenantId);
+        boolean hasVerifiedDomain = domainRepository
+                .findFirstByTenant_TenantIdAndVerificationStatus(tenantId, DomainVerificationStatus.VERIFIED)
+                .isPresent();
+        if (!hasVerifiedDomain) {
+            throw new IllegalStateException("Tenant must have a verified domain before approval");
+        }
         tenant.transitionTo(TenantLifecycleStatus.APPROVED);
         return tenantRepository.saveAndFlush(tenant);
     }
