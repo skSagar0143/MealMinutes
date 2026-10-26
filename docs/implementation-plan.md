@@ -1,66 +1,69 @@
 # Implementation plan and release gates
 
-Updated: 2026-10-26. This is a living tracker; statuses must reflect verified repository evidence.
+Updated: 2026-10-26. This is a living tracker; a feature is complete only when its code and relevant test evidence exist.
 
 ## Phase 1 — Foundation
 
-- [x] Initialize repository documentation and Java 21 / Spring Boot build.
-- [x] Add externalized configuration and Actuator health probes.
-- [x] Add application context smoke test and JaCoCo HTML/XML report wiring with instruction/branch checks.
-- [x] Get the backend CI build green with MySQL-backed Flyway migrations, 93 tests, JaCoCo HTML/XML report upload, and 75% instruction / 60% branch coverage gates.
-- [x] Add Docker Compose configuration for local MySQL and Redis.
-- [ ] Verify clean local startup and Maven tests on Java 21 outside GitHub Actions.
+- [x] Java 21 / Spring Boot 4.1.2 Maven build, externalized configuration and Actuator health probes.
+- [x] Docker Compose local MySQL and Redis services.
+- [x] GitHub Actions backend CI and JaCoCo HTML/XML artifact upload.
+- [x] Current verified backend run: 146 tests, zero failures/errors; 80.65% instruction, 82.24% line, 65.58% branch and 80.10% method coverage.
+- [ ] Verify clean local Windows/STS startup and `mvn clean verify` outside GitHub Actions.
 
-## Phase 2 — Data and module boundaries
+## Phase 2 — Tenant data and provisioning
 
-- [x] Add initial MySQL/Flyway platform tenant registry and domain migration.
-- [x] Add tenant registry/domain JPA models and repositories.
-- [x] Add explicit tenant lifecycle transition policy and provisioning metadata invariants.
-- [x] Document platform-vs-tenant data ownership.
-- [ ] Implement restricted tenant database provisioning, per-tenant Flyway migration orchestration, safe retries and recovery.
+- [x] Platform tenant registry/domain schema and JPA persistence.
+- [x] Verified hostname/DNS TXT ownership proof and tenant lifecycle transitions.
+- [x] Restricted tenant database provisioning, encrypted local secret storage and per-tenant Flyway migration orchestration components.
+- [x] Bounded tenant datasource pool, tenant-aware JDBC adapter and separate tenant transaction manager when provisioning is enabled.
+- [x] Tenant schema migrations V1–V3 and MySQL-backed migration integration test.
+- [ ] Prove full provisioning retries/recovery with deployment-like credentials and failure injection.
+- [ ] Add concurrent cross-tenant read/write isolation tests against separate real databases.
 
-## Phase 3 — Tenant isolation and security (release-blocking)
+## Phase 3 — Security (release-blocking)
 
-- [x] Normalize hostnames and resolve exact verified registry mappings for active/provisioned tenants.
-- [x] Bind a request-scoped tenant descriptor and clear it on success and exception paths.
-- [x] Add unit tests for malformed hosts, tenant lifecycle transitions, resolver rejection, and context cleanup.
-- [x] Implement expiring DNS TXT domain ownership proof/verification workflow.
-- [x] Implement an isolated bounded LRU tenant datasource pool registry with validated database names and secret-reference credentials.\n- [ ] Wire tenant pools into a tenant-aware EntityManagerFactory/router and prove isolation with integration tests.
-- [x] Add tenant membership authorization primitives independent of hostname.
-- [x] Add fail-closed stateless Spring Security baseline; only health/info are allow-listed while authentication is not configured.
-- [x] Implement optional RS256 access tokens, BCrypt password hashing, opaque hashed refresh sessions with rotation/revocation, and HttpOnly refresh cookies.
-- [ ] Add distributed login throttling, password reset/email verification, signing-key rotation, and comprehensive authentication integration tests.
-- [ ] Add real cross-tenant, forged-host/header, and concurrent datasource-isolation integration tests.
+- [x] Optional RS256 access tokens, password hashing, hashed refresh sessions with rotation/revocation and HttpOnly refresh cookies.
+- [x] Fail-closed security baseline and tenant membership/role authorization.
+- [x] Audit and outbox writes for menu management.
+- [ ] Distributed login throttling, password reset/email verification, key rotation and comprehensive JWT/session security tests.
+- [ ] Prove forged-host/header isolation, cross-tenant authorization and concurrent datasource eviction behavior.
+- [ ] Production secret manager, TLS, security headers/CSP, dependency/container scans and external security review.
 
-## Phase 4 — Core business workflows
+## Phase 4 — Restaurant, cart and order workflows
 
-- [ ] Restaurant/branch management and menu write/admin workflows.\n- [x] Add tenant-database-backed public restaurant profile and menu read endpoints with input validation and bounded pagination.
-- [ ] Customer addresses, cart, checkout and idempotent order creation.
-- [ ] Order state machine, snapshots, inventory concurrency and audit history.
-- [ ] Payment adapter, verified webhook replay protection, refunds and reconciliation.
-- [ ] Delivery assignment, promotions, notifications and reviews.
+- [x] Public tenant restaurant/menu read APIs with bounded pagination and validation.
+- [x] Tenant membership/role-protected menu category/item management.
+- [x] Customer cart read/add/update/remove, quantity bounds, price snapshots and server-calculated subtotals.
+- [x] Database uniqueness for one ACTIVE cart per customer/branch and duplicate-create recovery.
+- [x] Idempotent checkout/order creation with request fingerprint, branch/availability checks, address and item snapshots, configured tax/delivery calculation, cart checkout and outbox event.
+- [x] Customer order detail and paginated history endpoints.
+- [ ] Payment-provider integration and payment-intent lifecycle.
+- [ ] Verified payment webhooks, replay protection, refunds, reconciliation and idempotent payment recovery.
+- [ ] Restaurant branch/profile/operating-hours management, inventory reservation, order state transitions, cancellations and audit history.
+- [ ] Customer address CRUD, coupons, delivery assignment, notifications and reviews.
+- [ ] Replace global starter pricing with a jurisdiction-aware tax and delivery pricing policy before accepting real orders.
 
 ## Phase 5 — Redis and Kafka
 
-- [ ] Tenant-aware cache keys, TTLs, invalidation and outage behavior.
-- [ ] Versioned events, transactional outbox, consumer idempotency, retry and dead-letter recovery.
-- [ ] Integration tests using real MySQL/Redis/Kafka containers.
+- [ ] Tenant-aware Redis cache keys, TTLs, invalidation and safe outage behavior.
+- [ ] Transactional outbox dispatcher to Kafka, versioned event schemas, consumer idempotency, retries and dead-letter recovery.
+- [ ] Real MySQL/Redis/Kafka integration tests, replay tooling and operational dashboards.
 
 ## Phase 6 — Web and mobile
 
-- [x] React + TypeScript public landing page and tenant menu-browsing storefront foundation.
-- [x] Responsive glassmorphism design foundation, light/dark toggle, loading/error/empty states and real menu API calls.
-- [x] React Native + Expo customer menu-browsing foundation with search/category filters and loading/error/empty states.
-- [ ] Complete restaurant dashboard, platform admin portal, customer cart/checkout/order history, secure mobile authentication and credential storage.
+- [x] React + TypeScript landing page and tenant menu storefront with responsive layout, theme toggle and loading/error/empty states.
+- [x] React Native + Expo menu-browsing foundation with search/category filters and loading/error/empty states.
+- [ ] Customer web/mobile sign-in, secure token storage, cart, checkout, order history and notifications.
+- [ ] Restaurant dashboard, branch/menu operations and platform admin portal.
+- [ ] Accessibility, device/browser compatibility, frontend end-to-end tests and mobile runtime tests.
 
-## Phase 7 — Delivery quality and operations
+## Phase 7 — Release readiness
 
-- [ ] CI: backend tests, JaCoCo thresholds, static/dependency checks, frontend lint/typecheck/tests/build, and mobile typecheck. Web CI test/typecheck/build currently passes; mobile CI remains to be verified.
-- [ ] Dockerfiles, local Compose health checks and resource limits.
-- [x] Add initial security, database ownership, API surface, and testing documentation.
-- [ ] Add deployment, TLS/DNS, secrets, backup/restore, monitoring, rollback and incident-response runbooks.
-- [ ] Run load/security testing and external production review.
+- [x] Backend CI runs tests and enforces 75% instruction / 60% branch coverage; JaCoCo report artifact uploaded.
+- [x] Web CI unit tests, TypeScript check and production build.
+- [x] Initial mobile TypeScript CI.
+- [ ] Raise coverage toward 90%+ instruction and 80%+ branch coverage, then test all critical failure paths.
+- [ ] API contract/OpenAPI checks, load tests, security tests, migration rollback/recovery tests and disaster-recovery drill.
+- [ ] Production Docker images, deployment manifests, TLS/domain setup, secret rotation, backup/restore, monitoring/alerting, SLOs, incident runbooks and payment-provider live verification.
 
-## Release gates
-
-A gate is PASS only when code exists and evidence (commands, output, test results, or deployment verification) is recorded. Otherwise it remains FAIL or BLOCKED. A successful compile alone is not production readiness. The application is not currently production-ready.
+**Release rule:** do not call this project production-ready until every release-blocking isolation, security, payment, recovery and operational gate above has passed with evidence.

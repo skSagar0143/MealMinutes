@@ -1,48 +1,55 @@
 # MealMinutes — Multi-Tenant Food Platform
 
-MealMinutes is the repository for a multi-tenant restaurant ordering and operations platform. **Zestivo** is the provisional brand from the product specification; the brand must remain configurable.
+MealMinutes is a multi-tenant restaurant ordering and operations platform. **Zestivo** is the provisional brand from the product specification and must remain configurable.
 
 ## Target architecture
 
-- Backend: Java 21, Maven, Spring Boot 4.1.2 and a modular monolith with versioned REST APIs.
-- Data: MySQL, Flyway, a platform control-plane database and a separate business database for each restaurant tenant.
-- Security: Spring Security, RS256 access tokens, refresh rotation/revocation, tenant membership authorization and audit trails.
-- Infrastructure: Docker Compose for local MySQL and Redis; Kafka for asynchronous workflows when event reliability patterns are implemented.
-- Web: React + TypeScript (official React docs list 19.3 as of 2026-10-26).
-- Mobile: React Native + Expo + TypeScript (customer menu-browsing foundation; full customer workflows pending).
-- Quality: JUnit, integration tests, Testcontainers, JaCoCo, CI and operational documentation.
+- Backend: Java 21, Maven, Spring Boot 4.1.2, modular monolith.
+- Data: MySQL, Flyway, platform control-plane database plus a separate business database for each restaurant tenant.
+- Security: Spring Security, optional RS256 access tokens, refresh-token rotation/revocation, tenant membership authorization, audit and outbox records.
+- Infrastructure: Docker Compose for local MySQL/Redis; Kafka is planned for reliable asynchronous workflows.
+- Web: React + TypeScript.
+- Mobile: React Native + Expo + TypeScript.
+- Quality: JUnit, MySQL-backed integration tests, JaCoCo, GitHub Actions and operational documentation.
 
-Spring Boot 4.1.2 is the stable release selected from the official docs checked on 2026-10-26 and supports Java 21. Dependencies should use the Spring Boot BOM unless a documented compatibility decision requires otherwise.
+## Current implementation status
 
-## Actual implementation status
+Implemented foundations and workflows include:
 
-The repository was empty at the start. The foundation now contains a Spring Boot entry point, externalized configuration, an application-context smoke test, JaCoCo wiring, local MySQL/Redis Compose services, Java 21 backend CI, and architecture/setup/testing documentation. The tenant foundation includes strict hostname normalization, verified-domain lookup, active/provisioned tenant checks, request-scoped context cleanup, lifecycle/provisioning state transitions, a bounded LRU datasource-pool component, expiring DNS TXT ownership challenges, and protected tenant onboarding/lifecycle APIs. A fail-closed Spring Security baseline has now been added: health/info are explicitly allow-listed while all other requests are denied until real authentication and authorization are implemented. Flyway auto-configuration was corrected to use the Spring Boot 4 starter.
+- Tenant registry, verified hostname/DNS TXT ownership verification, tenant lifecycle state machine and protected tenant onboarding.
+- Restricted tenant database provisioning components, encrypted local development secret storage, per-tenant Flyway orchestration, bounded tenant datasource pools and a separate tenant JDBC transaction manager.
+- Optional RS256 authentication, password hashing, hashed refresh sessions with rotation/revocation, HttpOnly refresh cookies and tenant membership/role authorization.
+- Public tenant restaurant/menu read APIs and role-protected menu category/item management with audit/outbox writes.
+- Customer cart read/add/update/remove APIs, current price snapshots, server-calculated subtotals and a database constraint for one active cart per customer/branch.
+- Idempotent checkout/order creation and customer order read/list APIs. Checkout records a `PAYMENT_PENDING` order, snapshots order items/address, calculates configured tax/delivery totals, checks out the cart and writes an outbox event.
+- Responsive React landing/storefront and React Native/Expo menu-browsing foundation.
 
-**The business platform is not yet implemented or production-ready.** Tenant provisioning and encrypted-secret components exist, but full end-to-end provisioning against deployment credentials, tenant-aware persistence integration and cross-tenant isolation proof remain release blockers. Login/refresh/revocation still need end-to-end wiring and broader security tests. Public tenant-database-backed restaurant profile and menu read APIs are implemented when tenant JDBC is configured. A React + TypeScript landing page/storefront and a React Native + Expo menu-browsing foundation now exist; the full restaurant dashboard, admin portal, cart/checkout/order/payment workflows, Redis, Kafka, mobile authentication/checkout and broad end-to-end/security tests remain pending. The latest previously successful backend CI run passed 93 tests with zero failures/errors, applied Flyway migrations V1–V3, generated and uploaded JaCoCo HTML/XML reports, and passed the configured 75% instruction / 60% branch coverage gates. The tenant business schema migration was separately validated against MySQL. The current datasource/menu changes are being rechecked in CI. Web CI has passed its unit tests, TypeScript check and production build; mobile CI is being added and must pass before the mobile scaffold is considered verified. The fail-closed security baseline denies API requests until configured RS256 authentication is enabled. The repository now includes optional RS256 login, short-lived signed access tokens, SHA-256-hashed rotating refresh sessions in HttpOnly SameSite cookies, account lock/disable state, a platform-admin bootstrap hook, and tenant membership authorization primitives. Configure RSA key files and the trusted frontend origin before enabling it; without keys, API routes remain denied. Track progress in [the implementation plan](docs/implementation-plan.md); a feature is complete only after its code and relevant test evidence exist.
+**This is not production-ready yet.** Order pricing is a configurable starter policy, not jurisdiction-aware tax compliance. Checkout does not yet create or verify a real payment. Still pending: payment-provider integration, verified webhook/replay handling, refunds and reconciliation; order state transitions and restaurant branch operations; customer address management; inventory concurrency; Redis cache/rate limiting; Kafka outbox dispatch/consumer idempotency/retry/dead-letter recovery; complete restaurant/admin dashboards and mobile authentication/cart/checkout; end-to-end cross-tenant security tests; deployment hardening, TLS, backups, monitoring and runbooks.
+
+## Latest verified backend CI
+
+[Backend CI run 40253109523](https://github.com/skSagar0143/MealMinutes/actions/runs/40253109523) completed successfully: **146 tests, zero failures/errors**, Flyway tenant migrations V1–V3, and an uploaded JaCoCo report. Measured aggregate coverage: 80.65% instructions, 82.24% lines, 65.58% branches and 80.10% methods. The configured gates are 75% instruction and 60% branch coverage; this is an improving baseline, not 100% coverage or proof of production readiness.
+
+Web CI has passed unit tests, TypeScript checking and a production build. The initial mobile TypeScript CI has passed. Current commits must be revalidated by CI after each change.
 
 ## Local development
 
-Prerequisites: JDK 21, Maven, Git and Docker Desktop. See [development setup](docs/development-setup.md).
+Use Java 21 and Docker Desktop. Copy `.env.example` to `.env`, review every local-only secret, then run:
 
-1. Copy `.env.example` to `.env` for disposable local development only. The default values are intentionally insecure and must never be used in production.
-2. Start the local dependencies: `docker compose up -d`.
-3. Check container status: `docker compose ps`.
-4. Run the backend tests: `mvn -f backend/pom.xml verify`.
-5. Start the API: `mvn -f backend/pom.xml spring-boot:run`.
-6. Check `http://localhost:8080/actuator/health`.
+```powershell
+docker compose up -d mysql redis
+mvn -B -f backend/pom.xml clean verify
+```
 
-GitHub Actions has verified the backend build and tests; a clean local Windows/STS startup has not yet been verified.
+Never use example credentials or the local encrypted-file secret store as a production secret-management system.
 
 ## Documentation
 
 - [Architecture](docs/architecture.md)
 - [Implementation plan and release gates](docs/implementation-plan.md)
 - [Development setup](docs/development-setup.md)
-- [Tenant isolation requirements](docs/tenant-isolation.md)
-- [Testing strategy and JaCoCo](docs/testing.md)\n- [Security design and gaps](docs/security.md)\n- [Database ownership](docs/database-design.md)\n- [API guide](docs/api-guide.md)
-- [ADR 0001: modular monolith](docs/architecture-decisions/0001-modular-monolith.md)
-- [ADR 0002: database-per-tenant](docs/architecture-decisions/0002-database-per-tenant.md)
-
-## Security principle
-
-A tenant hostname identifies a tenant; it does not authorize a user. The backend must resolve normalized hostnames through trusted registry data, verify tenant status, establish and clear request-scoped context, and independently verify that the authenticated principal is authorized for that tenant. Client-provided tenant IDs and database details are never sufficient proof of access.
+- [Tenant isolation and security](docs/tenant-isolation.md)
+- [Security design and gaps](docs/security.md)
+- [Database design](docs/database-design.md)
+- [API guide](docs/api-guide.md)
+- [Testing and JaCoCo](docs/testing.md)
