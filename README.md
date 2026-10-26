@@ -81,3 +81,7 @@ Do not mark the platform production-ready until tenant isolation, payment recove
 - [Database design](docs/database-design.md)
 - [API guide](docs/api-guide.md)
 - [Testing and JaCoCo](docs/testing.md)
+- [Redis caching](docs/redis.md)
+- [Kafka eventing and recovery](docs/kafka.md)
+- [Deployment and release operations](docs/deployment.md)
+- [Backup and recovery](docs/backup-and-recovery.md)
