@@ -1,41 +1,43 @@
 # Security design and current status
 
-## Current controls implemented
+This document describes implemented controls and remaining release blockers. A passing unit/integration test suite does not by itself establish production readiness.
+
+## Controls implemented
 
 - Tenant hostname input is normalized with IDN-to-ASCII conversion, lowercase canonicalization, label/length checks, and rejection of ports, paths, user-info, wildcards, and malformed labels.
-- Tenant resolution accepts only an exact hostname mapping whose domain status is `VERIFIED`.
-- The resolved tenant must be `ACTIVE`, have successful provisioning status, and have a database name recorded before a tenant context is created.
-- Tenant context is thread-local and removed in a `finally` path; the scope also removes it when closed.
-- Provisioning metadata stores a secret-manager reference, not a plaintext database password.
-- Hibernate schema auto-update is disabled; Flyway migrations are intended to own schema changes.
-- Public error responses do not include stack traces or exception details.
+- Tenant resolution accepts only an exact hostname mapping whose domain status is `VERIFIED`. The tenant must be `ACTIVE`, provisioned successfully, and have a database name before a tenant context is created.
+- Tenant context is scoped and cleared in a `finally` path; its scope also clears context when closed.
+- Tenant business data uses a tenant-aware datasource and separate tenant transaction manager when tenant provisioning is enabled. A real MySQL integration test verifies that two tenant contexts route to separate databases.
+- Hibernate schema auto-update is disabled; Flyway owns tenant schema changes. Tenant schema migrations are tested against MySQL in CI.
+- Spring Security is stateless and fail-closed by default. Only explicitly allowed health/info endpoints are public in the default security configuration.
+- Optional RS256 JWT signing/validation loads PKCS#8 private and X.509 public PEM keys from configured resource locations. Access tokens are short-lived.
+- Passwords use BCrypt. Opaque refresh tokens are stored only as SHA-256 hashes; refresh rotation locks the session row and revokes the previous token. Refresh cookies are HttpOnly, SameSite=Strict, scoped to `/api/v1/auth`, and Secure by default.
+- Login, refresh and logout require the configured exact Origin. A platform administrator can be bootstrapped from `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD`; credentials must be supplied through environment configuration and must never be logged.
+- Tenant membership and role checks are enforced for restaurant menu, branch/profile, customer-address and restaurant-order operations. Customer address and order lookups are scoped to the authenticated user subject.
+- Payment webhook signatures are verified against the raw request body; event IDs are deduplicated. Payment/order state changes and outbox records are persisted transactionally.
+- Menu/profile/order lifecycle writes use tenant-scoped transactions and audit/outbox records where implemented. Public error responses do not include stack traces or internal exception details.
 
-## Important limitations — not production-ready
+## Configuration and key custody
 
-- Authentication, RS256 JWT validation, refresh-token rotation/revocation, password hashing, MFA, account throttling, and role/permission authorization are not implemented yet.
-- Hostname resolution is **not authorization**. A hostname or tenant context must never be used as proof that a user belongs to that tenant. Membership and role checks must be implemented before exposing business APIs.
-- A bounded, access-ordered tenant datasource pool registry now exists with validated database names, secret-reference credential resolution, eviction, and close semantics. It is not yet wired into a tenant-aware EntityManagerFactory/router; the current JPA datasource is still the platform database only. Do not query tenant business data through it.
-- Domain ownership verification is not implemented. The `markVerified` domain model method is an internal state transition only and must never be exposed through an unauthenticated public endpoint.
-- No production secret manager, TLS deployment, rate limiter, security scanner, or external penetration test is configured.
+Authentication and payment routes remain disabled unless their feature flags and required tenant/security/order-pricing configuration are enabled. Configure RSA key locations, trusted origins, payment provider credentials and database credentials through deployment secret management. Never commit private keys, real credentials, provider secrets, or production database passwords.
+
+The current local encrypted file secret store is not a substitute for a production secret manager. Key generation, custody, rotation and emergency revocation remain operator responsibilities.
+
+## Important limitations
+
+- Distributed login throttling, MFA, email verification, password reset and comprehensive account-compromise recovery are not implemented.
+- RSA key rotation and a production secret manager are not configured.
+- A real MySQL integration test verifies routing to separate tenant databases, but forged-host/header tests, concurrent cross-tenant writes, context-propagation tests and datasource-eviction race tests remain incomplete.
+- Tenant hostname resolution is not authorization. A hostname or tenant context must never be treated as proof of user membership; business endpoints must independently verify the required tenant membership and role.
+- Payment refund execution, provider reconciliation jobs, manual recovery tooling and live provider verification remain incomplete.
+- TLS/reverse-proxy hardening, security headers/CSP review, CORS review, dependency/container scanning, load testing and external penetration testing have not been completed.
 
 ## Release blockers
 
-1. Implement and test RSA/RS256 token signing/validation using external key material and key IDs.
-2. Add tenant membership and permission checks independent of hostname.
-3. Implement tenant datasource lifecycle management with bounded pools and explicit context propagation.
-4. Add integration tests for forged host/header input, context cleanup, concurrency, and cross-tenant reads/writes.
-5. Verify deployment TLS, trusted reverse-proxy configuration, secrets, backups, monitoring, and incident response before launch.
+1. Add distributed authentication throttling, email verification/password reset and key/session recovery controls.
+2. Complete forged-host/header, tenant-membership, concurrent datasource lifecycle and cross-tenant write isolation tests.
+3. Configure production TLS, trusted proxy headers, secrets, key rotation, security headers/CSP and dependency/container scanning.
+4. Complete payment refunds/reconciliation and failure-injection tests before processing real orders.
+5. Verify backups, restore procedures, monitoring, alerting, SLOs and incident response before launch.
 
-Never commit real credentials, private keys, provider secrets, or production database passwords.
-
-
-## Current fail-closed baseline
-
-Spring Security is now present. The current filter chain is stateless, explicitly permits only health and limited info endpoints, and denies all other requests. This is intentionally not a usable authentication implementation; do not expose the service as a working API until RS256 authentication, refresh-token rotation/revocation, and authorization are implemented and tested. Do not replace this with `permitAll()` as a workaround.
-
-
-## Optional RS256 authentication implementation
-
-The code now includes an RS256 JWT encoder/decoder that loads PKCS#8 private and X.509 public PEM keys from configured resource locations, BCrypt password hashing, a short-lived access token, and opaque refresh tokens stored only as SHA-256 hashes. Refresh rotation uses a pessimistic row lock and revokes the prior session. The refresh cookie is HttpOnly, SameSite=Strict, scoped to `/api/v1/auth`, and Secure by default. Login, refresh and logout require the configured exact Origin. A platform administrator can be bootstrapped from `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD` environment variables; the password must be 16–72 characters and is never logged. Enable authentication only after configuring `MEALMINUTES_SECURITY_ENABLED=true`, RSA key locations and the trusted origin. Key generation and deployment key custody remain operator responsibilities; do not commit private keys.
-
-This is not yet a complete production identity system: login throttling, email verification, password reset, key rotation, CORS policy, session revocation on account compromise, and end-to-end authentication tests remain release blockers.
+Do not replace the fail-closed security baseline with `permitAll()` as a workaround. Do not expose tenant-backed routes publicly without the required authentication, tenant resolution and membership authorization.
