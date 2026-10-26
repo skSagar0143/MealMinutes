@@ -17,9 +17,9 @@ Reports:
 
 GitHub Actions uploads the JaCoCo report directory as the `jacoco-report` workflow artifact.
 
-## Latest verified CI snapshot
+## Verified CI snapshots
 
-[Backend CI run 40253109523](https://github.com/skSagar0143/MealMinutes/actions/runs/40253109523) passed **146 tests with zero failures/errors**, applied tenant migrations V1–V3 against MySQL, generated the JaCoCo report and passed the configured quality gates.
+The pre-Redis main baseline [run 40380957054](https://github.com/skSagar0143/MealMinutes/actions/runs/40380957054) passed **195 tests with zero failures/errors** and generated the JaCoCo report. The tenant-aware Redis cache feature branch [run 40381216478](https://github.com/skSagar0143/MealMinutes/actions/runs/40381216478) passed **204 tests with zero failures/errors** and generated the report. Check the [latest main-branch workflow](https://github.com/skSagar0143/MealMinutes/actions) for post-merge verification.
 
 | Metric | Measured coverage |
 |---|---:|
@@ -47,7 +47,7 @@ Configured gates: 75% instruction and 60% branch coverage. These are aggregate p
 - JWT expiry/revocation, login throttling, key rotation and comprehensive authorization tests.
 - Payment provider success/failure, webhook signature verification/replay, refunds and reconciliation.
 - Order transitions, inventory contention, cancellation/refund recovery.
-- Redis invalidation/outage, Kafka outbox delivery, consumer idempotency, retry/DLT/replay.
+- Redis tenant-scoped cache-key/TTL/invalidation/outage unit tests; real-Redis integration and rollback tests remain pending. Kafka outbox dispatcher delivery/retry/dead-letter unit tests pass; consumer idempotency, real-broker replay and dead-letter re-drive remain pending.
 - Frontend and mobile end-to-end/runtime tests, accessibility, load tests and external security review.
 
 Coverage thresholds should rise toward 90%+ instruction and 80%+ branch coverage as critical workflows are added; do not lower them just to make a failing build green.
