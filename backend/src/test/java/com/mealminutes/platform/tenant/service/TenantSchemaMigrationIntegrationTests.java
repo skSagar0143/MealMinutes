@@ -39,9 +39,17 @@ class TenantSchemaMigrationIntegrationTests {
                     .locations("classpath:db/tenant-migration").cleanDisabled(true).load();
             flyway.migrate();
 
-            assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("2");
+            assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("3");
             try (var connection = DriverManager.getConnection(tenantUrl, username, password);
                  ResultSet columns = connection.getMetaData().getColumns(databaseName, null, "customer_cart", "active_cart_key")) {
+                assertThat(columns.next()).isTrue();
+            }
+            try (var connection = DriverManager.getConnection(tenantUrl, username, password);
+                 ResultSet columns = connection.getMetaData().getColumns(databaseName, null, "customer_order", "request_fingerprint")) {
+                assertThat(columns.next()).isTrue();
+            }
+            try (var connection = DriverManager.getConnection(tenantUrl, username, password);
+                 ResultSet columns = connection.getMetaData().getColumns(databaseName, null, "customer_order", "fulfillment_type")) {
                 assertThat(columns.next()).isTrue();
             }
             try (var connection = DriverManager.getConnection(tenantUrl, username, password);
