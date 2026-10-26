@@ -2,7 +2,7 @@
 
 ## Current status
 
-Redis is available as a local infrastructure service in `compose.yaml`. Tenant-aware storefront cache integration is being validated in [PR #8](https://github.com/skSagar0143/MealMinutes/pull/8); until that change is merged and its CI is green, do not assume the cache implementation is part of the `main` release.
+Redis is available as a local infrastructure service in `compose.yaml`. Tenant-aware storefront caching was merged to `main` in [commit cc0d5f5](https://github.com/skSagar0143/MealMinutes/commit/cc0d5f575f701c980c17caa2797dbc05d96eb442). Its backend CI passed 204 tests on the feature branch; the post-merge main-branch CI run is still pending. Unit tests cover tenant-scoped versioned keys, TTL, after-commit invalidation, missing-context bypass and safe fallback on Redis failures. Real-Redis end-to-end cache tests and load/outage testing remain release gates.
 
 Redis must remain a cache, not the source of truth for orders, payments or tenant authorization.
 
@@ -49,9 +49,9 @@ Production must configure authentication, TLS, network restrictions, bounded con
 
 ## Required tests before enabling in production
 
-- [ ] Two tenants cannot read each other's cached profile, categories or items.
-- [ ] Menu writes invalidate only the current tenant and only after commit.
-- [ ] Rollback does not invalidate a cache as if the write committed.
+- [ ] A real-Redis integration test proves two tenants cannot read each other's cached profile, categories or items.
+- [x] Unit tests verify version-based invalidation is scoped to the current tenant and runs after commit.
+- [ ] Add a transaction rollback integration test proving cache invalidation does not run for rolled-back writes.
 - [ ] Redis outage/timeout falls back safely and produces bounded logs.
 - [ ] Cache TTL and version-key behavior are verified against a real Redis instance.
 - [ ] Sensitive values and raw user search text are not stored in keys or logs.
