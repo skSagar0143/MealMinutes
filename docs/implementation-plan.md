@@ -7,7 +7,7 @@ Updated: 2026-10-26. This is a living tracker; a feature is complete only when i
 - [x] Java 21 / Spring Boot 4.1.2 Maven build, externalized configuration and Actuator health probes.
 - [x] Docker Compose local MySQL and Redis services.
 - [x] GitHub Actions backend CI and JaCoCo HTML/XML artifact upload.
-- [x] Latest verified main-branch backend run: [40380957054](https://github.com/skSagar0143/MealMinutes/actions/runs/40380957054) — 195 tests, zero failures/errors; JaCoCo report generated and configured coverage gates passed.
+- [x] Pre-Redis baseline main-branch backend run: [40380957054](https://github.com/skSagar0143/MealMinutes/actions/runs/40380957054) — 195 tests, zero failures/errors; JaCoCo report generated and configured coverage gates passed. Redis feature-branch CI [40381216478](https://github.com/skSagar0143/MealMinutes/actions/runs/40381216478) passed 204 tests; verify the latest main run after merge.
 - [ ] Verify clean local Windows/STS startup and `mvn clean verify` outside GitHub Actions.
 
 ## Phase 2 — Tenant data and provisioning
