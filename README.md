@@ -1,55 +1,83 @@
-# MealMinutes — Multi-Tenant Food Platform
+# MealMinutes — Multi-Tenant Food-Tech Platform
 
-MealMinutes is a multi-tenant restaurant ordering and operations platform. **Zestivo** is the provisional brand from the product specification and must remain configurable.
+MealMinutes is a multi-tenant restaurant ordering and operations platform. **Zestivo** is the provisional product brand; the UI should keep branding configurable.
 
-## Target architecture
+## Architecture
 
-- Backend: Java 21, Maven, Spring Boot 4.1.2, modular monolith.
-- Data: MySQL, Flyway, platform control-plane database plus a separate business database for each restaurant tenant.
-- Security: Spring Security, optional RS256 access tokens, refresh-token rotation/revocation, tenant membership authorization, audit and outbox records.
-- Infrastructure: Docker Compose for local MySQL/Redis; Kafka is planned for reliable asynchronous workflows.
-- Web: React + TypeScript.
-- Mobile: React Native + Expo + TypeScript.
-- Quality: JUnit, MySQL-backed integration tests, JaCoCo, GitHub Actions and operational documentation.
+- **Backend:** Java 21, Maven, Spring Boot 4.1.2, modular monolith.
+- **Data:** MySQL and Flyway, with a platform control-plane database and a separate business database for each restaurant tenant.
+- **Security:** Spring Security, optional RS256 access tokens, hashed refresh sessions with rotation/revocation, tenant membership authorization and audit records.
+- **Messaging:** Kafka transactional outbox dispatcher with event metadata, bounded polling, retries and database dead-letter state; consumer-side idempotency/re-drive is not complete.
+- **Local infrastructure:** Docker Compose for MySQL, Redis and Kafka.
+- **Web:** React + TypeScript.
+- **Mobile:** React Native + Expo + TypeScript.
+- **Quality:** JUnit/Mockito, MySQL-backed integration tests, JaCoCo and GitHub Actions.
 
-## Current implementation status
+## Implemented foundations
 
-Implemented foundations and workflows include:
-
-- Tenant registry, verified hostname/DNS TXT ownership verification, tenant lifecycle state machine and protected tenant onboarding.
-- Restricted tenant database provisioning components, encrypted local development secret storage, per-tenant Flyway orchestration, bounded tenant datasource pools and a separate tenant JDBC transaction manager.
-- Optional RS256 authentication, password hashing, hashed refresh sessions with rotation/revocation, HttpOnly refresh cookies and tenant membership/role authorization.
-- Public tenant restaurant/menu read APIs and role-protected menu category/item management with audit/outbox writes.
-- Customer cart read/add/update/remove APIs, current price snapshots, server-calculated subtotals and a database constraint for one active cart per customer/branch.
-- Idempotent checkout/order creation and customer order read/list APIs. Checkout records a `PAYMENT_PENDING` order, snapshots order items/address, calculates configured tax/delivery totals, checks out the cart and writes an outbox event.
-- Responsive React landing/storefront and React Native/Expo menu-browsing foundation.
-
-**This is not production-ready yet.** Order pricing is a configurable starter policy, not jurisdiction-aware tax compliance. Checkout does not yet create or verify a real payment. Still pending: payment-provider integration, verified webhook/replay handling, refunds and reconciliation; order state transitions and restaurant branch operations; customer address management; inventory concurrency; Redis cache/rate limiting; Kafka outbox dispatch/consumer idempotency/retry/dead-letter recovery; complete restaurant/admin dashboards and mobile authentication/cart/checkout; end-to-end cross-tenant security tests; deployment hardening, TLS, backups, monitoring and runbooks.
+- Tenant registry, normalized hostnames, DNS TXT domain-ownership verification and tenant lifecycle transitions.
+- Restricted tenant database provisioning components, encrypted local-development credential storage, per-tenant Flyway migrations, bounded tenant datasource pools and tenant-aware JDBC/transaction management.
+- Optional RS256 authentication, password hashing, hashed refresh-token sessions, refresh rotation/revocation and HttpOnly refresh cookies.
+- Tenant membership and role authorization for restaurant operations.
+- Restaurant profile, branch and operating-hours management.
+- Public tenant menu/storefront reads and protected menu category/item management.
+- Customer address CRUD, customer cart APIs, server-calculated subtotals and a database constraint for one active cart per customer/branch.
+- Idempotent checkout/order creation, customer order detail/history, restaurant order transitions, order history/audit/outbox records and unpaid-order cancellation rules.
+- Razorpay payment-intent creation, raw-body webhook signature verification, webhook event deduplication, payment/order state changes and transactional outbox writes.
+- React landing page/storefront and React Native/Expo menu-browsing foundation.
+- Docker Compose definitions for MySQL, Redis and Kafka.
 
 ## Latest verified backend CI
 
-[Backend CI run 40253109523](https://github.com/skSagar0143/MealMinutes/actions/runs/40253109523) completed successfully: **146 tests, zero failures/errors**, Flyway tenant migrations V1–V3, and an uploaded JaCoCo report. Measured aggregate coverage: 80.65% instructions, 82.24% lines, 65.58% branches and 80.10% methods. The configured gates are 75% instruction and 60% branch coverage; this is an improving baseline, not 100% coverage or proof of production readiness.
+[Backend CI run 40380957054](https://github.com/skSagar0143/MealMinutes/actions/runs/40380957054) completed successfully with **195 tests, zero failures/errors**, a generated JaCoCo report and the configured coverage gates. The gates currently require at least 75% instruction coverage and 60% branch coverage. This is not 100% coverage and does not prove production readiness.
 
-Web CI has passed unit tests, TypeScript checking and a production build. The initial mobile TypeScript CI has passed. Current commits must be revalidated by CI after each change.
+The latest verified run validates the repository state at that commit. Each subsequent code change must be revalidated by its own CI run.
 
 ## Local development
 
-Use Java 21 and Docker Desktop. Copy `.env.example` to `.env`, review every local-only secret, then run:
+Prerequisites: JDK 21, Maven, Node.js LTS and Docker Desktop. Review `.env.example` and replace local-only values as needed. Do not commit real credentials or private keys.
+
+Start local infrastructure:
 
 ```powershell
-docker compose up -d mysql redis
+docker compose up -d mysql redis kafka
+```
+
+Run backend tests and generate coverage:
+
+```powershell
 mvn -B -f backend/pom.xml clean verify
 ```
 
-Never use example credentials or the local encrypted-file secret store as a production secret-management system.
+JaCoCo reports are generated at:
+
+- HTML: `backend/target/site/jacoco/index.html`
+- XML: `backend/target/site/jacoco/jacoco.xml`
+
+The tenant-backed workflows are feature-flagged and require the platform database, tenant datasource/provisioning configuration, valid tenant secrets and RSA key configuration. Payment and outbox features also require their corresponding flags and provider/broker configuration. See the API guide and development setup before enabling them.
+
+## Remaining release blockers
+
+This project is **not production-ready yet**. Major remaining work includes:
+
+- Redis tenant-aware cache integration, cache invalidation and outage tests.
+- Kafka consumer idempotency, schema compatibility, retry/replay handling and dead-letter re-drive tooling.
+- Customer registration/verification, login throttling, password reset, key rotation and stronger security testing.
+- Customer web/mobile sign-in, cart, checkout, order history and notification experiences.
+- Restaurant dashboard and platform administration UI.
+- Inventory reservation, refunds and payment reconciliation, delivery assignment, coupons/promotions, notifications and reviews.
+- Jurisdiction-aware tax/pricing policy, API/OpenAPI contract checks and end-to-end/load tests.
+- Production Docker image hardening, TLS/domain configuration, secret management, backup/restore, monitoring/alerting and incident runbooks.
+
+Do not mark the platform production-ready until tenant isolation, payment recovery, security, integration testing and operational release gates pass with evidence.
 
 ## Documentation
 
 - [Architecture](docs/architecture.md)
 - [Implementation plan and release gates](docs/implementation-plan.md)
 - [Development setup](docs/development-setup.md)
-- [Tenant isolation and security](docs/tenant-isolation.md)
-- [Security design and gaps](docs/security.md)
+- [Tenant isolation](docs/tenant-isolation.md)
+- [Security](docs/security.md)
 - [Database design](docs/database-design.md)
 - [API guide](docs/api-guide.md)
 - [Testing and JaCoCo](docs/testing.md)
