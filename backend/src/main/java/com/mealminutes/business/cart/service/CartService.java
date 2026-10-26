@@ -41,8 +41,9 @@ public class CartService {
         requireIdentity(customerId, request.branchId());
         validateItemRequest(request);
         ensureActiveBranch(request.branchId());
-        MenuPrice price = findAvailablePrice(request.itemId());
+        // Lock the cart before the menu item so add/update operations use one lock order.
         String cartId = findOrCreateActiveCart(customerId, request.branchId());
+        MenuPrice price = findAvailablePrice(request.itemId());
         List<Integer> quantities = jdbc.query("""
                 SELECT quantity FROM customer_cart_item WHERE cart_id = ? AND item_id = ? FOR UPDATE
                 """, (rs, row) -> rs.getInt("quantity"), cartId, request.itemId());

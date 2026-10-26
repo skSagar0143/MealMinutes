@@ -58,6 +58,55 @@ class TenantMenuAdminControllerTests {
         verify(auth).requireAnyRole(eq("tenant-1"), eq("user-1"), anySet());
     }
 
+
+    @Test void listsCategoriesAndUpdatesCategoryStateForAuthorizedMember() {
+        TenantMenuManagementService menu = mock(TenantMenuManagementService.class);
+        TenantMembershipAuthorizationService auth = mock(TenantMembershipAuthorizationService.class);
+        var category = new MenuCategoryResponse("category-1", "Coffee", "coffee", null, 0);
+        when(menu.listCategories(false)).thenReturn(List.of(category));
+        when(menu.listCategories(true)).thenReturn(List.of(category));
+        var controller = new TenantMenuAdminController(menu, auth);
+        try (var ignored = TenantContext.bind(tenant())) {
+            assertThat(controller.categories(false, jwt())).containsExactly(category);
+            assertThat(controller.categories(true, jwt())).containsExactly(category);
+            controller.setCategoryActive("category-1", new TenantMenuAdminController.ActiveRequest(false), jwt());
+        }
+        verify(menu).setCategoryActive("category-1", false, "user-1");
+        verify(auth, times(3)).requireAnyRole(eq("tenant-1"), eq("user-1"), anySet());
+    }
+
+    @Test void createsMenuItemAndUpdatesAvailabilityForAuthorizedMember() {
+        TenantMenuManagementService menu = mock(TenantMenuManagementService.class);
+        TenantMembershipAuthorizationService auth = mock(TenantMembershipAuthorizationService.class);
+        var response = new MenuItemResponse("item-1", "category-1", "Tea", "tea", "Fresh tea",
+                new java.math.BigDecimal("10.00"), "INR", "https://cdn.example.test/tea.jpg",
+                true, false, "milk", true, 1);
+        when(menu.createItem(any(), eq("user-1"))).thenReturn(response);
+        var controller = new TenantMenuAdminController(menu, auth);
+        var request = new TenantMenuAdminController.CreateMenuItemRequest(
+                "category-1", "Tea", null, "Fresh tea", new java.math.BigDecimal("10.00"), "INR",
+                "https://cdn.example.test/tea.jpg", true, false, "milk", 1);
+        try (var ignored = TenantContext.bind(tenant())) {
+            assertThat(controller.createItem(request, jwt())).isEqualTo(response);
+            controller.setItemAvailability("item-1", new TenantMenuAdminController.AvailabilityRequest(false), jwt());
+        }
+        verify(menu).setItemAvailability("item-1", false, "user-1");
+        verify(menu).createItem(any(TenantMenuManagementService.CreateMenuItemCommand.class), eq("user-1"));
+        verify(auth, times(2)).requireAnyRole(eq("tenant-1"), eq("user-1"), anySet());
+    }
+
+    @Test void deniesMissingJwtAndMissingTenantContextBeforeCallingMenu() {
+        TenantMenuManagementService menu = mock(TenantMenuManagementService.class);
+        TenantMembershipAuthorizationService auth = mock(TenantMembershipAuthorizationService.class);
+        var controller = new TenantMenuAdminController(menu, auth);
+        assertThatThrownBy(() -> controller.categories(false, null)).isInstanceOf(AccessDeniedException.class);
+        Jwt missingSubject = mock(Jwt.class);
+        when(missingSubject.getSubject()).thenReturn(null);
+        assertThatThrownBy(() -> controller.categories(false, missingSubject)).isInstanceOf(AccessDeniedException.class);
+        assertThatThrownBy(() -> controller.categories(false, jwt())).isInstanceOf(IllegalStateException.class);
+        verifyNoInteractions(menu, auth);
+    }
+
     private Jwt jwt() {
         Instant now = Instant.now();
         return Jwt.withTokenValue("access-token").header("alg", "RS256").subject("user-1")
@@ -67,3 +116,4 @@ class TenantMenuAdminControllerTests {
         return new TenantContext.TenantDescriptor("tenant-1", "abc-food", "tenant_abc_food", "secret://abc");
     }
 }
+// Expanded happy-path and authentication-denial coverage for menu endpoints.

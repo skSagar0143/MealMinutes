@@ -84,4 +84,55 @@ class CartServiceTests {
         assertThatThrownBy(()->service.addItem("user-1",new AddCartItemRequest("branch-1","missing-item",1,null)))
                 .isInstanceOf(ResponseStatusException.class);
     }
+
+    @Test void readsExistingCartAndCalculatesSubtotal() {
+        when(jdbc.query(anyString(), any(RowMapper.class), eq("user-1"), eq("branch-1"))).thenReturn(List.of("cart-1"));
+        when(jdbc.query(contains("FROM customer_cart_item ci"), any(RowMapper.class), eq("cart-1")))
+                .thenReturn(List.of(new com.mealminutes.business.cart.api.CartResponse.CartItemResponse(
+                        "ci-1","item-1","Tea",2,new BigDecimal("5.00"),"INR",new BigDecimal("10.00"),null)));
+        var result = service.getActiveCart("user-1","branch-1");
+        assertThat(result.cartId()).isEqualTo("cart-1");
+        assertThat(result.subtotal()).isEqualByComparingTo("10.00");
+        assertThat(result.items().getFirst().name()).isEqualTo("Tea");
+    }
+
+    @Test void recoversConcurrentActiveCartCreationUsingUniqueKey() {
+        when(jdbc.query(contains("FROM restaurant_branch"),any(RowMapper.class),eq("branch-1"))).thenReturn(List.of("branch-1"));
+        when(jdbc.query(contains("FROM menu_item"),any(RowMapper.class),eq("item-1")))
+                .thenReturn(List.of(new CartService.MenuPrice("item-1",new BigDecimal("5.00"),"INR")));
+        when(jdbc.query(contains("FROM customer_cart"),any(RowMapper.class),eq("user-1"),eq("branch-1")))
+                .thenReturn(List.of()).thenReturn(List.of("cart-winner"));
+        when(jdbc.update(contains("INSERT INTO customer_cart "),any(Object[].class)))
+                .thenThrow(new org.springframework.dao.DuplicateKeyException("concurrent cart insert"));
+        when(jdbc.query(contains("SELECT quantity FROM customer_cart_item"),any(RowMapper.class),eq("cart-winner"),eq("item-1")))
+                .thenReturn(List.of());
+        when(jdbc.update(contains("INSERT INTO customer_cart_item"),any(Object[].class))).thenReturn(1);
+        when(jdbc.query(contains("FROM customer_cart_item ci"),any(RowMapper.class),eq("cart-winner"))).thenReturn(List.of());
+        var result=service.addItem("user-1",new AddCartItemRequest("branch-1","item-1",1,null));
+        assertThat(result.cartId()).isEqualTo("cart-winner");
+    }
+
+    @Test void rejectsExcessQuantityAndMissingOwnedCartOrItem() {
+        when(jdbc.query(contains("FROM restaurant_branch"),any(RowMapper.class),eq("branch-1"))).thenReturn(List.of("branch-1"));
+        when(jdbc.query(contains("FROM menu_item"),any(RowMapper.class),eq("item-1")))
+                .thenReturn(List.of(new CartService.MenuPrice("item-1",new BigDecimal("5.00"),"INR")));
+        when(jdbc.query(contains("FROM customer_cart"),any(RowMapper.class),eq("user-1"),eq("branch-1"))).thenReturn(List.of("cart-1"));
+        when(jdbc.query(contains("SELECT quantity FROM customer_cart_item"),any(RowMapper.class),eq("cart-1"),eq("item-1"))).thenReturn(List.of(99));
+        assertThatThrownBy(()->service.addItem("user-1",new AddCartItemRequest("branch-1","item-1",1,null)))
+                .isInstanceOf(IllegalArgumentException.class);
+        when(jdbc.query(anyString(),any(RowMapper.class),eq("cart-1"),eq("user-1"))).thenReturn(List.of());
+        assertThatThrownBy(()->service.updateQuantity("user-1","cart-1","item-1",2)).isInstanceOf(ResponseStatusException.class);
+        assertThatThrownBy(()->service.removeItem("user-1","cart-1","item-1")).isInstanceOf(ResponseStatusException.class);
+    }
+
+    @Test void returnsNotFoundWhenCartItemDoesNotExistDuringUpdateOrRemove() {
+        when(jdbc.query(anyString(),any(RowMapper.class),eq("cart-1"),eq("user-1"))).thenReturn(List.of("branch-1"));
+        when(jdbc.query(contains("FROM menu_item"),any(RowMapper.class),eq("item-1")))
+                .thenReturn(List.of(new CartService.MenuPrice("item-1",new BigDecimal("5.00"),"INR")));
+        when(jdbc.update(contains("UPDATE customer_cart_item"),any(Object[].class))).thenReturn(0);
+        assertThatThrownBy(()->service.updateQuantity("user-1","cart-1","item-1",2)).isInstanceOf(ResponseStatusException.class);
+        when(jdbc.update(contains("DELETE FROM customer_cart_item"),any(Object[].class))).thenReturn(0);
+        assertThatThrownBy(()->service.removeItem("user-1","cart-1","item-1")).isInstanceOf(ResponseStatusException.class);
+    }
+
 }
