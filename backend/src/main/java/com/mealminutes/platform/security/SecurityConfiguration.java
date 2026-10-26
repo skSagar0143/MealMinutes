@@ -57,7 +57,7 @@ public class SecurityConfiguration {
                     "/actuator/health", "/actuator/health/**", "/actuator/info", "/api/v1/tenant-domains/verify", "/api/v1/storefront/**").permitAll().anyRequest().denyAll());
         } else {
             http.authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info", "/api/v1/tenant-domains/verify").permitAll()
+                    .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info", "/api/v1/tenant-domains/verify", "/api/v1/storefront/**").permitAll()
                     .requestMatchers("/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/logout").permitAll()
                     .requestMatchers("/api/v1/platform/**").hasRole("PLATFORM_ADMIN")
                     .anyRequest().authenticated())
