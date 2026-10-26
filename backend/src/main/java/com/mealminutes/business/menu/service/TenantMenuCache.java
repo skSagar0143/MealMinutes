@@ -23,12 +23,13 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.function.Supplier;
 
 @Component
 public class TenantMenuCache {
     private static final Logger log = LoggerFactory.getLogger(TenantMenuCache.class);
     private static final String KEY_PREFIX = "mealminutes:tenant:";
-    private final ObjectProvider<StringRedisTemplate> redisProvider;
+    private final Supplier<StringRedisTemplate> redisProvider;
     private final ObjectMapper objectMapper;
     private final boolean enabled;
     private final long ttlSeconds;
@@ -37,6 +38,11 @@ public class TenantMenuCache {
     public TenantMenuCache(ObjectProvider<StringRedisTemplate> redisProvider, ObjectMapper objectMapper,
                            @Value("${mealminutes.redis.enabled:false}") boolean enabled,
                            @Value("${mealminutes.redis.cache-ttl-seconds:60}") long ttlSeconds) {
+        this(redisProvider::getIfAvailable, objectMapper, enabled, ttlSeconds);
+    }
+
+    private TenantMenuCache(Supplier<StringRedisTemplate> redisProvider, ObjectMapper objectMapper,
+                            boolean enabled, long ttlSeconds) {
         this.redisProvider = redisProvider;
         this.objectMapper = objectMapper;
         this.enabled = enabled;
@@ -44,11 +50,11 @@ public class TenantMenuCache {
     }
 
     TenantMenuCache(StringRedisTemplate redis, ObjectMapper objectMapper, boolean enabled, long ttlSeconds) {
-        this(new SingleTemplateProvider(redis), objectMapper, enabled, ttlSeconds);
+        this(() -> redis, objectMapper, enabled, ttlSeconds);
     }
 
     public TenantMenuCache() {
-        this(new SingleTemplateProvider(null), null, false, 60);
+        this(() -> null, null, false, 60);
     }
 
     public RestaurantProfileResponse getProfile() {
@@ -106,7 +112,7 @@ public class TenantMenuCache {
         String key = cacheKey(suffix);
         if (key == null) return null;
         try {
-            String json = redisProvider.getIfAvailable().opsForValue().get(key);
+            String json = redisProvider.get().opsForValue().get(key);
             return json == null ? null : objectMapper.readValue(json, type);
         } catch (Exception failure) {
             log.warn("Redis storefront cache read failed; using database fallback ({})", failure.getClass().getSimpleName());
@@ -159,24 +165,4 @@ public class TenantMenuCache {
         }
     }
 
-    private static final class SingleTemplateProvider implements ObjectProvider<StringRedisTemplate> {
-        private final StringRedisTemplate redis;
-        private SingleTemplateProvider(StringRedisTemplate redis) { this.redis = redis; }
-        @Override public StringRedisTemplate getObject(Object... args) { return redis; }
-        @Override public StringRedisTemplate getObject() { return redis; }
-        @Override public StringRedisTemplate getIfAvailable() { return redis; }
-        @Override public StringRedisTemplate getIfUnique() { return redis; }
-        @Override public StringRedisTemplate getIfAvailable(java.util.function.Supplier<StringRedisTemplate> supplier) {
-            return redis == null ? supplier.get() : redis;
-        }
-        @Override public StringRedisTemplate getIfUnique(java.util.function.Supplier<StringRedisTemplate> supplier) {
-            return redis == null ? supplier.get() : redis;
-        }
-        @Override public StringRedisTemplate getObject(java.util.function.Supplier<StringRedisTemplate> supplier) {
-            return redis == null ? supplier.get() : redis;
-        }
-        @Override public java.util.Iterator<StringRedisTemplate> iterator() {
-            return redis == null ? java.util.Collections.emptyIterator() : java.util.List.of(redis).iterator();
-        }
-    }
 }
