@@ -86,6 +86,44 @@ class RestaurantProfileServiceTests {
         }
     }
 
+    @Test
+    void returnsActiveProfileWhenPresent() {
+        when(jdbc.query(contains("FROM restaurant_profile WHERE is_active = TRUE LIMIT 1"),
+                any(RowMapper.class))).thenReturn(List.of(profile()));
+        assertThat(service.getProfile()).contains(profile());
+    }
+
+    @Test
+    void reactivatesAnExistingInactiveProfileWhenNoActiveProfileExists() {
+        when(jdbc.query(contains("WHERE is_active = TRUE ORDER BY created_at ASC LIMIT 1 FOR UPDATE"),
+                any(RowMapper.class))).thenReturn(List.of());
+        when(jdbc.query(contains("SELECT restaurant_id FROM restaurant_profile ORDER BY created_at ASC"),
+                any(RowMapper.class))).thenReturn(List.of("profile-1"));
+        when(jdbc.update(anyString(), any(Object[].class))).thenReturn(1);
+
+        try (TenantContext.Scope ignored = TenantContext.bind(tenant())) {
+            var result = service.saveProfile("owner-1", command("Asia/Kolkata"));
+            assertThat(result.id()).isEqualTo("profile-1");
+        }
+        verify(jdbc).update(contains("UPDATE restaurant_profile SET restaurant_name"), any(Object[].class));
+    }
+
+    @Test
+    void rejectsNonHttpLogoUrlsBeforeDatabaseWrites() {
+        var invalid = new RestaurantProfileService.ProfileCommand("Local Kitchen", null,
+                "ftp://example.com/logo.png", null, null, "INR", "Asia/Kolkata");
+        assertThatThrownBy(() -> service.saveProfile("owner-1", invalid))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("HTTP(S)");
+        verifyNoInteractions(jdbc);
+    }
+
+    private static com.mealminutes.business.menu.api.RestaurantProfileResponse profile() {
+        return new com.mealminutes.business.menu.api.RestaurantProfileResponse("profile-1", "Local Kitchen",
+                "Fresh meals", "https://example.com/logo.png", "support@example.com",
+                "+911234567890", "INR", "Asia/Kolkata");
+    }
+
     private static RestaurantProfileService.ProfileCommand command(String timezone) {
         return new RestaurantProfileService.ProfileCommand("Local Kitchen", "Fresh meals",
                 "https://example.com/logo.png", "support@example.com", "+911234567890", "inr", timezone);
