@@ -29,23 +29,34 @@ import java.util.UUID;
 public class RestaurantProfileService {
     private final JdbcTemplate jdbc;
     private final ObjectMapper objectMapper;
+    private final com.mealminutes.business.menu.service.TenantMenuCache cache;
 
     @Autowired
     public RestaurantProfileService(@Qualifier("tenantBusinessJdbcTemplate") JdbcTemplate jdbc,
-                                    ObjectMapper objectMapper) {
+                                    ObjectMapper objectMapper,
+                                    com.mealminutes.business.menu.service.TenantMenuCache cache) {
         this.jdbc = Objects.requireNonNull(jdbc, "jdbc");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
+        this.cache = Objects.requireNonNull(cache, "cache");
+    }
+
+    public RestaurantProfileService(JdbcTemplate jdbc, ObjectMapper objectMapper) {
+        this(jdbc, objectMapper, new com.mealminutes.business.menu.service.TenantMenuCache());
     }
 
     @Transactional(transactionManager = "tenantTransactionManager", readOnly = true)
     public java.util.Optional<RestaurantProfileResponse> getProfile() {
-        return jdbc.query("""
+        RestaurantProfileResponse cached = cache.getProfile();
+        if (cached != null) return java.util.Optional.of(cached);
+        java.util.Optional<RestaurantProfileResponse> profile = jdbc.query("""
                 SELECT restaurant_id, restaurant_name, description, logo_url, support_email, support_phone, currency, timezone
                 FROM restaurant_profile WHERE is_active = TRUE LIMIT 1
                 """, (rs, row) -> new RestaurantProfileResponse(rs.getString("restaurant_id"),
                 rs.getString("restaurant_name"), rs.getString("description"), rs.getString("logo_url"),
                 rs.getString("support_email"), rs.getString("support_phone"), rs.getString("currency"),
                 rs.getString("timezone"))).stream().findFirst();
+        profile.ifPresent(cache::putProfile);
+        return profile;
     }
 
     @Transactional(transactionManager = "tenantTransactionManager")
@@ -102,6 +113,7 @@ public class RestaurantProfileService {
         }
 
         recordProfileChange(actorUserId, profileId, created, name, currency, timezone);
+        cache.evictCurrentTenantAfterCommit();
         return new RestaurantProfileResponse(profileId, name, description, logoUrl, supportEmail,
                 supportPhone, currency, timezone);
     }

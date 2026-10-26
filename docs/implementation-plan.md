@@ -49,7 +49,7 @@ Updated: 2026-10-26. This is a living tracker; a feature is complete only when i
 
 ## Phase 5 — Redis and Kafka
 
-- [ ] Tenant-aware Redis cache keys, TTLs, invalidation and safe outage behavior.
+- [x] Optional tenant-scoped Redis caching for restaurant profile, categories and paginated menu items; query dimensions are hashed, cache entries expire, menu/profile writes bump a tenant cache version after commit, and Redis errors fall back to MySQL.
 - [x] Tenant-aware transactional outbox dispatcher to Kafka, event metadata headers, bounded batch polling, exponential retry backoff and database dead-letter state (feature-flagged).\n- [ ] Consumer idempotency, schema compatibility checks, dead-letter re-drive tooling, end-to-end Kafka integration tests and operational dashboards.
 - [ ] Real MySQL/Redis/Kafka integration tests, replay tooling and operational dashboards.
 

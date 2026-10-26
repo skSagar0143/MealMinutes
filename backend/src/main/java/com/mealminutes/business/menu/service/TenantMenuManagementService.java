@@ -33,25 +33,33 @@ public class TenantMenuManagementService {
     private final Supplier<JdbcTemplate> jdbcProvider;
     private final Supplier<PlatformTransactionManager> transactionManagerProvider;
     private final ObjectMapper objectMapper;
+    private final TenantMenuCache cache;
 
     @Autowired
     public TenantMenuManagementService(
             @Qualifier("tenantBusinessJdbcTemplate") ObjectProvider<JdbcTemplate> jdbcProvider,
             @Qualifier("tenantTransactionManager") ObjectProvider<PlatformTransactionManager> transactionManagers,
-            ObjectMapper objectMapper) {
-        this(jdbcProvider::getIfAvailable, transactionManagers::getIfAvailable, objectMapper);
+            ObjectMapper objectMapper, TenantMenuCache cache) {
+        this(jdbcProvider::getIfAvailable, transactionManagers::getIfAvailable, objectMapper, cache);
     }
 
     TenantMenuManagementService(JdbcTemplate jdbc, PlatformTransactionManager transactionManager, ObjectMapper objectMapper) {
-        this(() -> jdbc, () -> transactionManager, objectMapper);
+        this(() -> jdbc, () -> transactionManager, objectMapper, new TenantMenuCache());
     }
 
     TenantMenuManagementService(Supplier<JdbcTemplate> jdbcProvider,
                                Supplier<PlatformTransactionManager> transactionManagerProvider,
                                ObjectMapper objectMapper) {
+        this(jdbcProvider, transactionManagerProvider, objectMapper, new TenantMenuCache());
+    }
+
+    TenantMenuManagementService(Supplier<JdbcTemplate> jdbcProvider,
+                               Supplier<PlatformTransactionManager> transactionManagerProvider,
+                               ObjectMapper objectMapper, TenantMenuCache cache) {
         this.jdbcProvider = Objects.requireNonNull(jdbcProvider);
         this.transactionManagerProvider = Objects.requireNonNull(transactionManagerProvider);
         this.objectMapper = Objects.requireNonNull(objectMapper);
+        this.cache = Objects.requireNonNull(cache);
     }
 
     public List<MenuCategoryResponse> listCategories(boolean includeInactive) {
@@ -169,7 +177,9 @@ public class TenantMenuManagementService {
     private <T> T inTenantTransaction(Supplier<T> operation) {
         PlatformTransactionManager manager = transactionManagerProvider.get();
         if (manager == null) throw new TenantProvisionerUnavailableException();
-        return new TransactionTemplate(manager).execute(status -> operation.get());
+        T result = new TransactionTemplate(manager).execute(status -> operation.get());
+        cache.evictCurrentTenant();
+        return result;
     }
 
     private JdbcTemplate jdbc() {
