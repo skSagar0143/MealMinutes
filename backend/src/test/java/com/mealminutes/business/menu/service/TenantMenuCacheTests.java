@@ -78,6 +78,54 @@ class TenantMenuCacheTests {
         verifyNoInteractions(redis, values);
     }
 
+    @Test
+    void readsCachedRestaurantProfile() {
+        when(values.get("mealminutes:tenant:tenant-1:storefront:version")).thenReturn("1");
+        when(values.get("mealminutes:tenant:tenant-1:storefront:v1:profile"))
+                .thenReturn("{\"id\":\"profile-1\",\"name\":\"Local Kitchen\",\"description\":null,\"logoUrl\":null,\"supportEmail\":null,\"supportPhone\":null,\"currency\":\"INR\",\"timezone\":\"Asia/Kolkata\"}");
+        try (TenantContext.Scope ignored = TenantContext.bind(tenant())) {
+            assertThat(cache.getProfile()).isEqualTo(new com.mealminutes.business.menu.api.RestaurantProfileResponse(
+                    "profile-1", "Local Kitchen", null, null, null, null, "INR", "Asia/Kolkata"));
+        }
+    }
+
+    @Test
+    void readsItemPageWithoutPuttingRawSearchTextInTheRedisKey() {
+        when(values.get("mealminutes:tenant:tenant-1:storefront:version")).thenReturn("3");
+        when(values.get(startsWith("mealminutes:tenant:tenant-1:storefront:v3:items:")))
+                .thenReturn("[{\"id\":\"item-1\",\"categoryId\":\"cat-1\",\"name\":\"Veg Bowl\",\"slug\":\"veg-bowl\",\"description\":null,\"price\":12.50,\"currency\":\"INR\",\"imageUrl\":null,\"vegetarian\":true,\"vegan\":true,\"allergens\":null,\"available\":true,\"displayOrder\":1}]");
+        try (TenantContext.Scope ignored = TenantContext.bind(tenant())) {
+            var result = cache.getItems(null, "customer-private-search", 0, 20);
+            assertThat(result).hasSize(1);
+            assertThat(result.getFirst().name()).isEqualTo("Veg Bowl");
+        }
+        verify(values, never()).get(contains("customer-private-search"));
+    }
+
+    @Test
+    void usesVersionZeroWhenTenantHasNoCacheVersionYet() {
+        when(values.get("mealminutes:tenant:tenant-1:storefront:version")).thenReturn(null);
+        try (TenantContext.Scope ignored = TenantContext.bind(tenant())) {
+            cache.putCategories(List.of(new MenuCategoryResponse("cat-1", "Lunch", "lunch", null, 1)));
+        }
+        verify(values).set(eq("mealminutes:tenant:tenant-1:storefront:v0:categories"), anyString(),
+                eq(Duration.ofSeconds(60)));
+    }
+
+    @Test
+    void invalidatesAfterCommitWhenTransactionSynchronizationIsActive() {
+        org.springframework.transaction.support.TransactionSynchronizationManager.initSynchronization();
+        try (TenantContext.Scope ignored = TenantContext.bind(tenant())) {
+            cache.evictCurrentTenantAfterCommit();
+            verify(values, never()).increment(anyString());
+            org.springframework.transaction.support.TransactionSynchronizationManager.getSynchronizations()
+                    .forEach(org.springframework.transaction.support.TransactionSynchronization::afterCommit);
+            verify(values).increment("mealminutes:tenant:tenant-1:storefront:version");
+        } finally {
+            org.springframework.transaction.support.TransactionSynchronizationManager.clearSynchronization();
+        }
+    }
+
     private static TenantContext.TenantDescriptor tenant() {
         return new TenantContext.TenantDescriptor("tenant-1", "abc-food", "tenant_abc_food", "secret://db");
     }
