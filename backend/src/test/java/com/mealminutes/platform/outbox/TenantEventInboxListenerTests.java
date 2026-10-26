@@ -30,7 +30,7 @@ class TenantEventInboxListenerTests {
     private TenantEventInboxListener listener() {
         when(transactionManager.getTransaction(any(TransactionDefinition.class)))
                 .thenReturn(mock(TransactionStatus.class));
-        return new TenantEventInboxListener(tenants, jdbc, transactionManager);
+        return new TenantEventInboxListener(tenants, jdbc, transactionManager, 1);
     }
 
     @AfterEach
@@ -97,6 +97,25 @@ class TenantEventInboxListenerTests {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("inbox migration");
         verifyNoInteractions(jdbc);
+    }
+
+    @Test
+    void rejectsEventSchemaNewerThanConfiguredCompatibilityCeiling() {
+        ConsumerRecord<String, String> record = eventRecord("tenant-1");
+        record.headers().remove("schema_version");
+        record.headers().add(new RecordHeader("schema_version", bytes("2")));
+
+        assertThatThrownBy(() -> listener().receive(record))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Unsupported event schema version: 2");
+        verifyNoInteractions(tenants, jdbc);
+    }
+
+    @Test
+    void rejectsNonPositiveSupportedSchemaCeiling() {
+        assertThatThrownBy(() -> new TenantEventInboxListener(tenants, jdbc, transactionManager, 0))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("must be positive");
     }
 
     @Test
