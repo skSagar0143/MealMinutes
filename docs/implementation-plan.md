@@ -16,7 +16,7 @@ Updated: 2026-10-26. This is a living tracker; a feature is complete only when i
 - [x] Verified hostname/DNS TXT ownership proof and tenant lifecycle transitions.
 - [x] Restricted tenant database provisioning, encrypted local secret storage and per-tenant Flyway migration orchestration components.
 - [x] Bounded tenant datasource pool, tenant-aware JDBC adapter and separate tenant transaction manager when provisioning is enabled.
-- [x] Tenant schema migrations V1–V8, MySQL-backed migration integration test and migration checks for address/profile uniqueness.
+- [x] Tenant schema migrations V1–V9, MySQL-backed migration integration test and migration checks for address/profile/outbox uniqueness and retry state.
 - [x] Real MySQL tenant-routing integration test proving tenant A and tenant B resolve to different databases and cannot read each other's probe rows.
 - [ ] Prove full provisioning retries/recovery with deployment-like credentials and failure injection.
 - [ ] Add concurrent cross-tenant write tests, forged-host/header tests and datasource-eviction concurrency tests.
@@ -50,7 +50,7 @@ Updated: 2026-10-26. This is a living tracker; a feature is complete only when i
 ## Phase 5 — Redis and Kafka
 
 - [ ] Tenant-aware Redis cache keys, TTLs, invalidation and safe outage behavior.
-- [ ] Transactional outbox dispatcher to Kafka, versioned event schemas, consumer idempotency, retries and dead-letter recovery.
+- [x] Tenant-aware transactional outbox dispatcher to Kafka, event metadata headers, bounded batch polling, exponential retry backoff and database dead-letter state (feature-flagged).\n- [ ] Consumer idempotency, schema compatibility checks, dead-letter re-drive tooling, end-to-end Kafka integration tests and operational dashboards.
 - [ ] Real MySQL/Redis/Kafka integration tests, replay tooling and operational dashboards.
 
 ## Phase 6 — Web and mobile
