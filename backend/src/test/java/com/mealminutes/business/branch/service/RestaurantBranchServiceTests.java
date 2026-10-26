@@ -96,6 +96,77 @@ class RestaurantBranchServiceTests {
         verify(jdbc, times(7)).update(contains("INSERT INTO restaurant_branch_operating_hours"), any(Object[].class));
     }
 
+    @Test
+    void listsBranchesUsingTheRequestedInactiveFilter() {
+        when(jdbc.query(contains("WHERE (? = TRUE OR is_active = TRUE)"), any(RowMapper.class), eq(false)))
+                .thenReturn(List.of(branch("branch-1")));
+        assertThat(service.listBranches(false)).containsExactly(branch("branch-1"));
+    }
+
+    @Test
+    void listsPublicHoursOnlyForAnActiveBranch() {
+        when(jdbc.query(contains("AND is_active = TRUE"), any(RowMapper.class), eq("branch-1")))
+                .thenReturn(List.of("branch-1"));
+        when(jdbc.query(contains("FROM restaurant_branch_operating_hours"), any(RowMapper.class), eq("branch-1")))
+                .thenReturn(List.of());
+        assertThat(service.listOperatingHours("branch-1", true)).isEmpty();
+    }
+
+    @Test
+    void rejectsPublicHoursForInactiveBranch() {
+        when(jdbc.query(contains("AND is_active = TRUE"), any(RowMapper.class), eq("branch-1")))
+                .thenReturn(List.of());
+        assertThatThrownBy(() -> service.listOperatingHours("branch-1", true))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting(e -> ((ResponseStatusException) e).getStatusCode())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void rejectsInvalidOpeningTimeBeforeDeletingExistingSchedule() {
+        when(jdbc.query(contains("FOR UPDATE"), any(RowMapper.class), eq("branch-1")))
+                .thenReturn(List.of("branch-1"));
+        var hours = List.of(
+                new RestaurantBranchService.OperatingHoursCommand(1, "25:00", "17:00", false),
+                new RestaurantBranchService.OperatingHoursCommand(2, null, null, true),
+                new RestaurantBranchService.OperatingHoursCommand(3, null, null, true),
+                new RestaurantBranchService.OperatingHoursCommand(4, null, null, true),
+                new RestaurantBranchService.OperatingHoursCommand(5, null, null, true),
+                new RestaurantBranchService.OperatingHoursCommand(6, null, null, true),
+                new RestaurantBranchService.OperatingHoursCommand(7, null, null, true));
+        assertThatThrownBy(() -> service.replaceOperatingHours("branch-1", hours))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("opensAt");
+        verify(jdbc, never()).update(contains("DELETE FROM restaurant_branch_operating_hours"), any(Object[].class));
+    }
+
+    @Test
+    void rejectsOpeningTimesOnClosedDaysBeforeDeletingSchedule() {
+        when(jdbc.query(contains("FOR UPDATE"), any(RowMapper.class), eq("branch-1")))
+                .thenReturn(List.of("branch-1"));
+        var hours = List.of(
+                new RestaurantBranchService.OperatingHoursCommand(1, "09:00", "17:00", false),
+                new RestaurantBranchService.OperatingHoursCommand(2, "09:00", "17:00", true),
+                new RestaurantBranchService.OperatingHoursCommand(3, null, null, true),
+                new RestaurantBranchService.OperatingHoursCommand(4, null, null, true),
+                new RestaurantBranchService.OperatingHoursCommand(5, null, null, true),
+                new RestaurantBranchService.OperatingHoursCommand(6, null, null, true),
+                new RestaurantBranchService.OperatingHoursCommand(7, null, null, true));
+        assertThatThrownBy(() -> service.replaceOperatingHours("branch-1", hours))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Closed days");
+        verify(jdbc, never()).update(contains("DELETE FROM restaurant_branch_operating_hours"), any(Object[].class));
+    }
+
+    @Test
+    void activatesBranchAndReturnsUpdatedState() {
+        when(jdbc.update(anyString(), any(Object[].class))).thenReturn(1);
+        when(jdbc.query(contains("FROM restaurant_branch WHERE branch_id = ?"), any(RowMapper.class), eq("branch-1")))
+                .thenReturn(List.of(branch("branch-1")));
+        assertThat(service.setBranchActive("branch-1", true).active()).isTrue();
+        verify(jdbc).update(contains("SET is_active = ?"), any(Object[].class));
+    }
+
     private static RestaurantBranchService.BranchCommand command() {
         return new RestaurantBranchService.BranchCommand("Downtown", "downtown", "12 Main Road",
                 null, "Jaipur", "Rajasthan", "302001", "in", "+911234567890",
