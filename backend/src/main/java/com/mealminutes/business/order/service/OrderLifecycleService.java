@@ -98,7 +98,7 @@ public class OrderLifecycleService {
         }
 
         List<String> paymentAttempts = jdbc.query("""
-                SELECT payment_id FROM payment_transaction WHERE order_id = ? FOR UPDATE
+                SELECT payment_id FROM payment_transaction WHERE order_id = ?
                 """, (rs, row) -> rs.getString("payment_id"), orderId);
         if (!paymentAttempts.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
