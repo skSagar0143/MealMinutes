@@ -1,7 +1,7 @@
 package com.mealminutes.business.menu.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.mealminutes.business.menu.api.MenuCategoryResponse;
 import com.mealminutes.business.menu.api.MenuItemResponse;
 import com.mealminutes.platform.tenant.domain.TenantContext;
@@ -199,7 +199,7 @@ public class TenantMenuManagementService {
 
     private String toJson(Object value) {
         try { return objectMapper.writeValueAsString(value); }
-        catch (JsonProcessingException exception) { throw new IllegalStateException("Unable to serialize audit/event payload", exception); }
+        catch (JacksonException exception) { throw new IllegalStateException("Unable to serialize audit/event payload", exception); }
     }
 
     private static RowMapper<MenuCategoryResponse> categoryMapper() {
