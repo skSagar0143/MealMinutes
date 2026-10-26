@@ -3,6 +3,7 @@ package com.mealminutes.business.cart.service;
 import com.mealminutes.business.cart.api.AddCartItemRequest;
 import com.mealminutes.business.cart.api.CartResponse;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -21,7 +22,7 @@ import java.util.UUID;
 public class CartService {
     private final JdbcTemplate jdbc;
 
-    public CartService(JdbcTemplate jdbc) { this.jdbc = Objects.requireNonNull(jdbc, "jdbc"); }
+    public CartService(@Qualifier("tenantBusinessJdbcTemplate") JdbcTemplate jdbc) { this.jdbc = Objects.requireNonNull(jdbc, "jdbc"); }
 
     @Transactional(transactionManager = "tenantTransactionManager", readOnly = true)
     public CartResponse getActiveCart(String customerId, String branchId) {
