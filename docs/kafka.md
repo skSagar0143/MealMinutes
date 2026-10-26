@@ -71,7 +71,7 @@ The listener commits the durable inbox write before returning, so the Kafka cont
 
 Delivery is **at least once**, not exactly once end to end. If Kafka accepts a record but the application fails before committing `published_at`, the event can be published again. The inbox receiver deduplicates durable receipt by `event_id` within the resolved tenant database. A future business processor must separately claim inbox rows, record processing attempts and make each side effect idempotent before marking an event processed. Consumer offsets alone do not make an external side effect exactly once.
 
-The dispatcher records attempts and bounded error messages. Failures use exponential backoff; after the configured attempt limit the outbox row is marked dead-lettered in MySQL. This is database dead-letter state, not yet a separate Kafka dead-letter topic. Re-drive tooling is not implemented; use a reviewed, audited recovery process until that tooling exists.
+The dispatcher records attempts and bounded error messages. Failures use exponential backoff; after the configured attempt limit the outbox row is marked dead-lettered in MySQL. The consumer now retries listener failures a bounded number of times and routes exhausted records to a topic named `<source-topic>.DLT` by default. Configure/create the DLT with at least as many partitions as the source topic before enabling the consumer; dead-letter publication failure is surfaced instead of silently acknowledged. DLT replay tooling and an audited operator workflow remain pending. Do not assume that publishing to a DLT alone repairs tenant data or performs business side effects.
 
 ## Verification checklist
 
@@ -81,7 +81,7 @@ The dispatcher records attempts and bounded error messages. Failures use exponen
 - [x] Send failures schedule bounded exponential retry and eventually enter database dead-letter state.
 - [x] Inbox receiver validates required metadata, positive schema version, active tenant and V10 schema readiness.
 - [x] Inbox receiver uses a tenant-local primary key and `INSERT IGNORE` to tolerate duplicate delivery.
-- [ ] Add an explicit supported-schema compatibility policy and dead-letter routing for invalid events.
+- [ ] Add an explicit supported-schema compatibility policy and real-broker tests proving invalid events reach the dead-letter topic after bounded retries.
 - [ ] Implement inbox business processing with durable attempts, idempotent side effects and processed-event ledger.
 - [ ] Consumer crash/rebalance/replay scenarios are tested against a real Kafka broker.
 - [ ] Dead-letter re-drive is audited and does not repeat irreversible side effects.
